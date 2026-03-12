@@ -1,0 +1,43 @@
+import json
+
+
+def load_config(path):
+
+    with open(path) as f:
+        return json.load(f)
+
+
+def expand_tests(cfg):
+
+    expanded = []
+
+    for test in cfg["tests"]:
+
+        sweep = test["sweep"]
+        var = sweep["var"]
+
+        for val in sweep["values"]:
+
+            run_cfg = dict(test["fixed_config"])
+            run_cfg[var] = val
+
+            expanded.append({
+                "name": test["name"],
+                "executable": test["executable"],
+                "governor": test["governor"],
+                "config": run_cfg,
+                "tag_fields": test["tag_fields"],
+                "iterations": test["total_iterations"]
+            })
+
+    return expanded
+
+
+def config_tag(config, fields):
+
+    parts = []
+
+    for f in fields:
+        parts.append(f"{f}{config[f]}")
+
+    return "_".join(parts)

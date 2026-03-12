@@ -1,0 +1,57 @@
+{
+  "host": {
+    "wattsup_com_port": "COM3",
+    "sample_interval_sec": 1.0,
+    "log_root": "C:/Users/erippey3/Documents/benchmark_orchestrator/bench_logs"
+  },
+  "dut": {
+    "hostname": "ritvik-RPI5",
+    "username": "ritvik",
+    "root_access": true,
+    "build_dir": "/home/ritvik/edgedevice-fft/build",
+    "config_txt": "/boot/firmware/config.txt"
+  },
+  "stability": {
+    "window_size": 30,
+    "required_consecutive_windows": 3,
+    "max_range_watts": 0.2,
+    "max_step_delta_watts": 0.1
+  },
+  "retry": {
+    "max_attempts": 8,
+    "cooldown_sec": 300,
+    "ssh_wait_timeout_sec": 300
+  },
+  "tests": [
+    {
+      "name": "GPU test",
+      "executable": "./clvk_ola_bench",
+      "governor": "powersave",
+      "fixed_config": {
+        "arm_freq": 1200,
+        "core_freq": 500
+      },
+      "sweep": {
+        "var": "v3d_freq",
+        "values": [500, 550, 600, 650, 700, 750, 800, 850, 900, 960]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq", "core_freq", "v3d_freq"]
+    },
+    {
+      "name": "CPU test 1",
+      "executable": "./pocl_ola_bench",
+      "governor": "performance",
+      "fixed_config": {
+        "core_freq": 500,
+        "v3d_freq": 500
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq", "core_freq", "v3d_freq"]
+    }
+  ]
+}
