@@ -33,6 +33,14 @@ class StabilityDetector:
 
         return self.consecutive_good >= self.required_consecutive
     
+    def get_range_step(self):
+        vals = list(self.window)
+
+        range_watts = max(vals) - min(vals)
+        max_step = max(abs(vals[i] - vals[i-1]) for i in range(1, len(vals)))
+
+        return range_watts, max_step
+    
     def clear(self):
         self.window.clear()
         self.consecutive_good = 0

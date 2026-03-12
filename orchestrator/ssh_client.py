@@ -34,7 +34,7 @@ class DUTClient:
                 timeout=timeout
             )
 
-    def run(self, cmd, as_root=False):
+    def run(self, cmd, as_root=False, async_run=False):
 
         client = self.root if as_root else self.user
         if client is None:
@@ -42,14 +42,24 @@ class DUTClient:
 
         stdin, stdout, stderr = client.exec_command(cmd)
 
+        if async_run:
+            # return immediately without draining pipes
+            return None, None, None
+
+        # normal synchronous behavior
+        code = stdout.channel.recv_exit_status()
+
         out = stdout.read().decode()
         err = stderr.read().decode()
-        code = stdout.channel.recv_exit_status()
 
         return code, out, err
 
     def reboot(self):
-        self.run("reboot", as_root=True)
+        try:
+            self.run("reboot", as_root=True)
+        except Exception:
+            # SSH disconect during reboot is expected
+            pass
 
     def wait_for_ssh(self, timeout_sec=300, retry_interval=5):
 
@@ -69,3 +79,16 @@ class DUTClient:
             self.user.close()
         if self.root:
             self.root.close()
+
+    def fetch_directory(self, remote_dir, local_dir):
+
+        sftp = self.user.open_sftp()
+
+        for entry in sftp.listdir(remote_dir):
+
+            remote_path = f"{remote_dir}/{entry}"
+            local_path = f"{local_dir}/{entry}"
+
+            sftp.get(remote_path, local_path)
+
+        sftp.close()

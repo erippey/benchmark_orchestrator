@@ -27,7 +27,8 @@ def expand_tests(cfg):
                 "governor": test["governor"],
                 "config": run_cfg,
                 "tag_fields": test["tag_fields"],
-                "iterations": test["total_iterations"]
+                "iterations": test["total_iterations"],
+                "max_runtime_sec": test["max_runtime_sec"]
             })
 
     return expanded
