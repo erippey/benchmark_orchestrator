@@ -1,1 +1,16 @@
 **/*.pyc
+
+bench_logs/*
+
+# ignore everything
+bench_logs/**
+
+# allow git to traverse directories
+!bench_logs/**/
+
+# only allow these files
+!bench_logs/**/config.txt
+!bench_logs/**/idle_power.csv
+!bench_logs/**/metadata.txt
+!bench_logs/**/run_power.csv
+!bench_logs/**/stdout_dump.txt

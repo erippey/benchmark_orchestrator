@@ -1,0 +1,76 @@
+format IEEE Float
+channels 1
+sample rate 44100
+valid bits per sample 32
+sample size 4
+length 21368782
+channel mask 0
+sub-format 0
+Starting warmup runs....
+Warmup runs complete
+number of spans 19263
+Benchmark FFT Convolution running on device CPU Single Thread
+
+Event 0: Convolution
+  Runs      : 20
+  Avg time  : 530.169065 milliseconds
+  Min time  : 529.628184 milliseconds
+  Max time  : 531.889630 milliseconds
+  Std Dev   : 0.593900 milliseconds
+
+Event 1: Total Execution
+  Runs      : 1
+  Avg time  : 10603.406272 milliseconds
+  Min time  : 10603.406272 milliseconds
+  Max time  : 10603.406272 milliseconds
+  Std Dev   : 0.000000 milliseconds
+
+Event 2: Total Execution Time
+  Runs      : 0
+  Avg time  : 0.000000 milliseconds
+  Min time  : inf milliseconds
+  Max time  : -inf milliseconds
+  Std Dev   : 0.000000 milliseconds
+
+Event 3: FFT Execution Time
+  Runs      : 3
+  Avg time  : 532.573500 milliseconds
+  Min time  : 532.306241 milliseconds
+  Max time  : 532.961240 milliseconds
+  Std Dev   : 0.343719 milliseconds
+
+Event 4: Forward FFT Execution Time
+  Runs      : 4809
+  Avg time  : 0.155709 milliseconds
+  Min time  : 0.146908 milliseconds
+  Max time  : 0.216055 milliseconds
+  Std Dev   : 0.003231 milliseconds
+
+Event 5: Filter FFT Execution Time
+  Runs      : 3
+  Avg time  : 0.159945 milliseconds
+  Min time  : 0.154685 milliseconds
+  Max time  : 0.170371 milliseconds
+  Std Dev   : 0.009030 milliseconds
+
+Event 6: Complex Multiply Execution Time
+  Runs      : 4809
+  Avg time  : 0.020461 milliseconds
+  Min time  : 0.019463 milliseconds
+  Max time  : 0.066185 milliseconds
+  Std Dev   : 0.001248 milliseconds
+
+Event 7: Inverse FFT Execution Time
+  Runs      : 4809
+  Avg time  : 0.142324 milliseconds
+  Min time  : 0.140796 milliseconds
+  Max time  : 0.172204 milliseconds
+  Std Dev   : 0.001959 milliseconds
+
+Event 8: Overlap Add
+  Runs      : 4809
+  Avg time  : 0.013282 milliseconds
+  Min time  : 0.011704 milliseconds
+  Max time  : 0.025871 milliseconds
+  Std Dev   : 0.000985 milliseconds
+

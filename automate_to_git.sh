@@ -1,9 +1,7 @@
 #!/bin/bash
 set -e
 
-#python3 main.py
-
-
+python3 main.py
 
 git add .
 
