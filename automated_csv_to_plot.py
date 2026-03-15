@@ -10,11 +10,13 @@ kernel_normalize = False
 
 class Graph:
 
-    def __init__(self, csv_path, independent_variable, graph_name, graph_name_for_file = None,
+    def __init__(self, csv_path, independent_variable, graph_name, graph_name_for_file = None, test_name=None,
                  kernel_names_and_ops=None, power=True, performance=True, total_ops = 0,
                  efficiency=True, kernel_percent_peak=True, peak_mflops=0.0):
         self.csv_path = csv_path
         self.csv = pd.read_csv(csv_path)
+        if test_name is not None and "TestName" in self.csv.columns:
+            self.csv = self.csv[self.csv["TestName"] == test_name].reset_index(drop=True)
         self.graph_name = graph_name
         if graph_name_for_file is None:
             self.graph_name_for_file = self.graph_name
@@ -118,10 +120,6 @@ class Graph:
             title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Efficiency', fontsize=16, wrap=True)
             ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
             ax1.set_ylabel('% of Peak Measured Flops', fontsize=14)
-            if self.y_max is not None:
-                plt.ylim(top=self.y_max['efficiency'])
-            if self.y_min is not None:
-                plt.ylim(bottom=self.y_min['efficiency'])
             for i, knao in enumerate(self.kernel_names_and_ops):
                 _, column_name, _ = knao
                 performance_over_peak = self.means[f"{column_name}_percent_peak"].to_numpy()
@@ -180,9 +178,9 @@ if __name__ == "__main__":
         ("Complex Multiply Execution Time", "complex_multiply", 3145728),
         ("Inverse FFT Execution Time", "inverse", 36700160)
     }
-    clvk_graph = Graph("More_tables/clvk_powersave.csv", independent_variable, "Overlap Add using clvk\N{RIGHTWARDS ARROW}GPU", 
-                   graph_name_for_file="graphs/clvk_powersave", kernel_names_and_ops=kernel_names_and_ops, total_ops=76646414974,
-                   peak_mflops=5270)
+    clvk_graph = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using clvk\N{RIGHTWARDS ARROW}GPU", 
+                   test_name="clvk_arm_freq_powersave", graph_name_for_file="graphs/clvk_powersave", kernel_names_and_ops=kernel_names_and_ops, 
+                   total_ops=76646414974, peak_mflops=5270)
     
     independent_variable = {
         "var_name": "arm_freq_min",
@@ -196,19 +194,24 @@ if __name__ == "__main__":
         ("Overlap Add", "overlap_add", 16384)
     }
 
-    fftw_graph_ps = Graph("More_tables/fftw_powersave.csv", independent_variable, "Overlap Add using FFTW\N{RIGHTWARDS ARROW}CPU", 
-                   graph_name_for_file="graphs/fftw_powersave", kernel_names_and_ops=kernel_names_and_ops, total_ops=76646414974,
-                   peak_mflops=38374)
-    
+    fftw_graph_ps = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using FFTW\N{RIGHTWARDS ARROW}CPU", 
+                   test_name="FFTW_arm_freq_powersave", graph_name_for_file="graphs/fftw_powersave", kernel_names_and_ops=kernel_names_and_ops, 
+                   total_ops=76646414974, peak_mflops=38374)
+
     independent_variable = {
         "var_name": "arm_freq",
         "proper_name": "CPU Frequency (MHz)"
     }
     
-    fftw_graph_pf = Graph("More_tables/fftw_performance.csv", independent_variable, "Overlap Add using FFTW\N{RIGHTWARDS ARROW}CPU", 
-                   graph_name_for_file="graphs/fftw_performance", kernel_names_and_ops=kernel_names_and_ops, total_ops=76646414974,
-                   peak_mflops=38374)
+    fftw_graph_pf = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using FFTW\N{RIGHTWARDS ARROW}CPU", 
+                   test_name="FFTW_arm_freq_performance", graph_name_for_file="graphs/fftw_performance", kernel_names_and_ops=kernel_names_and_ops, 
+                   total_ops=76646414974, peak_mflops=38374)
     
+    independent_variable = {
+        "var_name": "arm_freq_min",
+        "proper_name": "CPU Frequency (MHz)"
+    }
+
     kernel_names_and_ops = {
         ("Forward FFT Execution Time", "forward", 4587520),
         ("Complex Multiply Execution Time", "complex_multiply", 393216),
@@ -216,10 +219,12 @@ if __name__ == "__main__":
         ("Overlap Add", "overlap_add", 65536)
     }
 
-    pocl_graph = Graph("More_tables/pocl_powersave.csv", independent_variable, "Overlap Add using PoCL\N{RIGHTWARDS ARROW}CPU", 
-                   graph_name_for_file="graphs/pocl_powersave", kernel_names_and_ops=kernel_names_and_ops, total_ops=76646414974,
-                   peak_mflops=38374)
+    pocl_graph = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using PoCL\N{RIGHTWARDS ARROW}CPU", 
+                   test_name="PoCL_arm_freq_powersave", graph_name_for_file="graphs/pocl_powersave", kernel_names_and_ops=kernel_names_and_ops, 
+                   total_ops=76646414974, peak_mflops=38374)
     
+    normalize_graphs([clvk_graph, fftw_graph_pf, fftw_graph_ps, pocl_graph])
+
     clvk_graph.plot()
     fftw_graph_pf.plot()
     fftw_graph_ps.plot()
