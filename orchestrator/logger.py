@@ -1,7 +1,6 @@
 import json
 import csv
 from pathlib import Path
-from datetime import datetime
 
 
 class RunLogger:
@@ -11,9 +10,9 @@ class RunLogger:
         self.root = Path(root_dir)
         self.root.mkdir(parents=True, exist_ok=True)
 
-    def new_run_dir(self, test_name, tag):
+    def new_run_dir(self, test_name, tag, date):
 
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = date
 
         base = self.root / today / f"{test_name}_{tag}"
         base.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,17 @@
+Date: 2026-03-12
+Device: Raspberry Pi Compute Module 5
+Test Name: FFTW_arm_freq_performance
+Executable: ./fftw_ola_bench
+Governor: performance
+
+Independant Variable: arm_freq 
+arm_freq: 1800
+arm_freq_min: 0
+core_freq: 0
+core_freq_min: 0
+v3d_freq: 0
+v3d_freq_min: 0
+gpu_freq: 0
+gpu_freq_min: 0
+over_voltage: 0
+over_voltage_min: 0

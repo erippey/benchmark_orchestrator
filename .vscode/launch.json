@@ -19,6 +19,13 @@
             "request": "launch",
             "program": "C:/Users/erippey3/Documents/benchmark_orchestrator/test_stability.py",
             "console": "integratedTerminal",
+        },
+                {
+            "name": "benchmark_aggregate.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "C:/Users/EMini/Documents/benchmark_orchestrator/benchmark_agregator.py",
+            "console": "integratedTerminal",
         }
     ]
 }

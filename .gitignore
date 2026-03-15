@@ -14,3 +14,4 @@ bench_logs/**
 !bench_logs/**/metadata.txt
 !bench_logs/**/run_power.csv
 !bench_logs/**/stdout_dump.txt
+!bench_logs/**/config_metadata.txt

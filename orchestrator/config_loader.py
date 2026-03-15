@@ -26,6 +26,7 @@ def expand_tests(cfg):
                 "executable": test["executable"],
                 "governor": test["governor"],
                 "config": run_cfg,
+                "independant_var": var,
                 "tag_fields": test["tag_fields"],
                 "iterations": test["total_iterations"],
                 "max_runtime_sec": test["max_runtime_sec"]

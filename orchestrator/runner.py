@@ -1,18 +1,18 @@
 import sys
 import time
 import tempfile
+from datetime import datetime
 
 from .wattsup import WattsUpMeter
 from .stability import StabilityDetector
 from .ssh_client import DUTClient
 from .logger import RunLogger
 from .config_loader import expand_tests, config_tag
-from .update_config import update_config
 
 
 class BenchmarkRunner:
 
-    def __init__(self, config):
+    def __init__(self, config, device_manager):
 
         self.cfg = config
 
@@ -41,24 +41,22 @@ class BenchmarkRunner:
 
         self.tests = expand_tests(config)
 
+        self.date = datetime.now().strftime("%Y-%m-%d")
+
+        self.device_manager = device_manager
+        self.device_manager.set_ssh_client(self.client)
+
     def wait_for_idle(self):
 
         self.stability.clear()
-        print("Ranges and steps: ", end='', flush=True)
         
         while True:
             
-            for i in range(10):
-                sample = self.meter.read_sample()
+            sample = self.meter.read_sample()
 
-                if self.stability.update(sample.watts):
-                    print('')
-                    return
+            if self.stability.update(sample.watts):
+                return
                 
-            rnge, step = self.stability.get_range_step()
-
-            print(f'[{rnge}, {step}], ', end='', flush=True)
-
 
 
     def measure_idle(self, writer, seconds=60):
@@ -68,43 +66,6 @@ class BenchmarkRunner:
             s = self.meter.read_sample()
 
             writer.writerow([s.timestamp, s.watts, s.volts, s.amps])
-
-    def apply_config(self, params):
-
-        cfg_path = self.cfg["dut"]["config_txt"]
-
-        cmd = f"cp {cfg_path} {cfg_path}.copy"
-        code, text, err = self.client.run(cmd, as_root=True)
-
-        if code != 0:
-            raise Exception(f"Failed to make copy of config.txt: {err}")
-
-        code, text, err = self.client.run(f"cat {cfg_path}", as_root=True)
-
-        if code != 0:
-            raise Exception(f"Failed to read config.txt: {err}")
-
-        new_text = update_config(text, params)
-
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(new_text.encode())
-            local_path = tmp.name
-
-        remote_tmp = "/tmp/config.txt.new"
-
-        sftp = self.client.user.open_sftp()
-        sftp.put(local_path, remote_tmp)
-        sftp.close()
-
-        cmd = f"mv {remote_tmp} {cfg_path}"
-
-        code, text, err = self.client.run(cmd, as_root=True)
-
-        if code != 0:
-            raise Exception(f"Failed to install config.txt: {err}")
-        
-        return new_text
-        
 
 
     def run(self):
@@ -123,42 +84,28 @@ class BenchmarkRunner:
 
             for iteration in range(test["iterations"]):
 
-                run_dir = self.logger.new_run_dir(test["name"], tag)
+                run_dir = self.logger.new_run_dir(test["name"], tag, self.date)
 
                 attempt = 1
 
                 while attempt <= self.cfg["retry"]["max_attempts"]:
 
                     print("Running", test["name"], tag, "attempt", attempt)
+                    
+                    self.device_manager.save_metadata(test, run_dir, self.date)
 
                     try:
 
                         self.client.connect()
 
-                        config_txt = self.apply_config(test["config"])
+                        # this starts raspbery pi specific power changes
 
+                        config_txt = self.device_manager.apply_config(test)
                         with open(f"{run_dir}/config.txt", "w") as config_file:
                             config_file.write(config_txt)
 
-                        print("Rebooting DUT")
-                        self.client.reboot()
-
-                        print("Waiting for reboot")
-
-                        self.client.wait_for_ssh(
-                            self.cfg["retry"]["ssh_wait_timeout_sec"]
-                        )
-
-                        # reconnect cleanly
-                        self.client.close()
-                        self.client.connect()
-
-                        code, text, err = self.client.run(f"cpufreq-set -g {test["governor"]}", as_root=True)
 
                         time.sleep(self.cfg["retry"]["cooldown_sec"])
-
-                        if code  != 0:
-                            raise Exception(f"Unable to set governor: {err}")
 
                         print("Waiting for idle stability")
 
@@ -204,7 +151,11 @@ class BenchmarkRunner:
                             raise Exception("Failed to capture benchmark PID")
 
                         # wait for warmup stabilization
+                        print("waiting for executable to reach stable power draw...")
+
                         self.wait_for_idle()
+
+                        print("Stable power achieved, beginnining recording performance and power draw...")
 
                         # trigger benchmark
                         self.client.run(f"touch {comm_file}")
