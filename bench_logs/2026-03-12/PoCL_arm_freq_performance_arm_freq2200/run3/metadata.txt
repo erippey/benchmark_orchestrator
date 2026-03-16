@@ -1,0 +1,15 @@
+Signal:
+Format: format IEEE Float
+Channels: 1
+Sample Rate: 44100
+Length: 21368782
+
+
+Filter Length:3047
+
+Backend: clola
+Platform: pocl
+N_FFT: 16384
+Batch Size: 4
+Algorithm data type: Float
+Sample format: complex
