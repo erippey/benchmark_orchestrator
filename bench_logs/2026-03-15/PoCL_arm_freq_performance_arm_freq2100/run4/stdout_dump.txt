@@ -1,0 +1,99 @@
+format IEEE Float
+channels 1
+sample rate 44100
+valid bits per sample 32
+sample size 4
+length 21368782
+channel mask 0
+sub-format 0
+Running on platform: Portable Computing Language
+Running clFFT convolution on device: cpu--0xd0b
+Starting warmup runs....
+Warmup runs complete
+number of spans 9654
+Benchmark FFT Convolution running on device OpenCL MultiThreaded CPU
+
+Event 0: Convolution
+  Runs      : 20
+  Avg time  : 1289.538347 milliseconds
+  Min time  : 1274.872573 milliseconds
+  Max time  : 1297.478703 milliseconds
+  Std Dev   : 6.173933 milliseconds
+
+Event 1: Total Execution
+  Runs      : 1
+  Avg time  : 25790.806633 milliseconds
+  Min time  : 25790.806633 milliseconds
+  Max time  : 25790.806633 milliseconds
+  Std Dev   : 0.000000 milliseconds
+
+Event 2: FFT Execution Time
+  Runs      : 3
+  Avg time  : 1299.417864 milliseconds
+  Min time  : 1297.068851 milliseconds
+  Max time  : 1301.196407 milliseconds
+  Std Dev   : 2.122088 milliseconds
+
+Event 3: Forward FFT Execution Time
+  Runs      : 1203
+  Avg time  : 0.522640 milliseconds
+  Min time  : 0.435018 milliseconds
+  Max time  : 1.437092 milliseconds
+  Std Dev   : 0.093551 milliseconds
+
+Event 4: Filter FFT Execution Time
+  Runs      : 3
+  Avg time  : 0.134642 milliseconds
+  Min time  : 0.133186 milliseconds
+  Max time  : 0.135555 milliseconds
+  Std Dev   : 0.001274 milliseconds
+
+Event 5: Complex Multiply Execution Time
+  Runs      : 1203
+  Avg time  : 0.714576 milliseconds
+  Min time  : 0.486611 milliseconds
+  Max time  : 1.468555 milliseconds
+  Std Dev   : 0.093935 milliseconds
+
+Event 6: Inverse FFT Execution Time
+  Runs      : 1203
+  Avg time  : 0.522238 milliseconds
+  Min time  : 0.449092 milliseconds
+  Max time  : 1.296019 milliseconds
+  Std Dev   : 0.084121 milliseconds
+
+Event 7: Overlap Add
+  Runs      : 1203
+  Avg time  : 0.245550 milliseconds
+  Min time  : 0.100759 milliseconds
+  Max time  : 1.615389 milliseconds
+  Std Dev   : 0.170035 milliseconds
+
+Event 8: GPU Memory Map
+  Runs      : 2409
+  Avg time  : 0.000936 milliseconds
+  Min time  : 0.000130 milliseconds
+  Max time  : 0.027334 milliseconds
+  Std Dev   : 0.001535 milliseconds
+
+Event 9: GPU Memroy Unmap
+  Runs      : 2406
+  Avg time  : 0.001844 milliseconds
+  Min time  : 0.000129 milliseconds
+  Max time  : 0.063759 milliseconds
+  Std Dev   : 0.004130 milliseconds
+
+Event 10: clfft Plan Initialization
+  Runs      : 0
+  Avg time  : 0.000000 milliseconds
+  Min time  : inf milliseconds
+  Max time  : -inf milliseconds
+  Std Dev   : 0.000000 milliseconds
+
+Event 11: OpenCL Pipeline Initiaation
+  Runs      : 0
+  Avg time  : 0.000000 milliseconds
+  Min time  : inf milliseconds
+  Max time  : -inf milliseconds
+  Std Dev   : 0.000000 milliseconds
+
