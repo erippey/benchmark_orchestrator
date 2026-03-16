@@ -98,7 +98,6 @@ class BenchmarkRunner:
 
                         self.client.connect()
 
-                        # this starts raspbery pi specific power changes
 
                         config_txt = self.device_manager.apply_config(test)
                         with open(f"{run_dir}/config.txt", "w") as config_file:

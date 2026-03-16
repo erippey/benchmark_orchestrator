@@ -59,77 +59,109 @@ class Graph:
         self.y_max = None
         self.y_min = None 
 
-    def plot(self):
+        self.additional_plots = {
+            'power': [],
+            'performance': [],
+            'efficiency': [],
+            'kernel_percent_peak': []
+        }
+
+    def plot(self, label=None):
         if self.power:
-            plt.clf()
-            fig, ax1 = plt.subplots()
-            title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V AVerage Power Consumption', fontsize=16, wrap=True)
-            ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
-            ax1.set_ylabel('Average Power (W)', fontsize=14)
-            if self.y_max is not None:
-                plt.ylim(top=self.y_max['power'])
-            if self.y_min is not None:
-                plt.ylim(bottom=self.y_min['power'])
-            power = self.means['run_power_w'].to_numpy()
-            power_err = self.stds['run_power_w'].to_numpy()
-            ax1.grid(True, alpha=0.4)
-            plt.errorbar(self.x_axis_values, power, yerr=power_err, marker='o', capsize=4)
-            fig.tight_layout()
-            plt.subplots_adjust(top=0.9)
-            title.set_y(1.05)
-            plt.savefig(f"{self.graph_name_for_file}_power.png", dpi=400)
+            self.plot_power()
         if self.performance:
-            plt.clf()
-            fig, ax1 = plt.subplots()
-            title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Performance', fontsize=16, wrap=True)
-            ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
-            ax1.set_ylabel('MFLOPS', fontsize=14)
-            if self.y_max is not None:
-                plt.ylim(top=self.y_max['performance'])
-            if self.y_min is not None:
-                plt.ylim(bottom=self.y_min['performance'])
-            performance = self.means['mflops'].to_numpy()
-            ax1.grid(True, alpha=0.4)
-            ax1.plot(self.x_axis_values, performance, marker='o')
-            fig.tight_layout()
-            plt.subplots_adjust(top=0.9)
-            title.set_y(1.05)
-            plt.savefig(f"{self.graph_name_for_file}_performance.png", dpi=400)
+            self.plot_performance()
         if self.efficiency:
-            plt.clf()
-            fig, ax1 = plt.subplots()
-            title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Efficiency', fontsize=16, wrap=True)
-            ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
-            ax1.set_ylabel('MFLOPS/W', fontsize=14)
-            if self.y_max is not None:
-                plt.ylim(top=self.y_max['efficiency'])
-            if self.y_min is not None:
-                plt.ylim(bottom=self.y_min['efficiency'])
-            efficiency = self.means['mflops_w'].to_numpy()
-            ax1.grid(True, alpha=0.4)
-            ax1.plot(self.x_axis_values, efficiency, marker='o')
-            fig.tight_layout()
-            plt.subplots_adjust(top=0.9)
-            title.set_y(1.05)
-            plt.savefig(f"{self.graph_name_for_file}_efficiency.png", dpi=400)
+            self.plot_efficiency()
         if self.kernel_percent_peak:
-            plt.clf()
-            line_types = ['-.', '--', (0, (5, 10)), ':', '-.', '--', (0, (5, 10)), ':']
-            line_color= ['cornflowerblue', 'mediumseagreen', 'darkorange', 'red']
-            fig, ax1 = plt.subplots()
-            title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Efficiency', fontsize=16, wrap=True)
-            ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
-            ax1.set_ylabel('% of Peak Measured Flops', fontsize=14)
-            for i, knao in enumerate(self.kernel_names_and_ops):
-                _, column_name, _ = knao
-                performance_over_peak = self.means[f"{column_name}_percent_peak"].to_numpy()
-                plt.plot(self.x_axis_values, performance_over_peak, linestyle=line_types[i], label=column_name.replace("_", " "), color=line_color[i])
-            ax1.grid(True, alpha=0.4)
-            plt.legend(title='Kernel')
-            fig.tight_layout()
-            plt.subplots_adjust(top=0.9)
-            title.set_y(1.05)
-            plt.savefig(f"{self.graph_name_for_file}_kernel_percent_peak.png", dpi=400)
+            self.plot_kernel_percent_peak()
+
+
+            
+    def plot_power(self):
+        plt.clf()
+        fig, ax1 = plt.subplots()
+        title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V AVerage Power Consumption', fontsize=16, wrap=True)
+        ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
+        ax1.set_ylabel('Average Power (W)', fontsize=14)
+        if self.y_max is not None:
+            plt.ylim(top=self.y_max['power'])
+        if self.y_min is not None:
+            plt.ylim(bottom=self.y_min['power'])
+        power = self.means['run_power_w'].to_numpy()
+        power_err = self.stds['run_power_w'].to_numpy()
+        ax1.grid(True, alpha=0.4)
+        plt.errorbar(self.x_axis_values, power, yerr=power_err, marker='o', capsize=4)
+        for plot in self.additional_plots['power']:
+            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"])
+        fig.tight_layout()
+        plt.subplots_adjust(top=0.9)
+        title.set_y(1.05)
+        plt.savefig(f"{self.graph_name_for_file}_power.png", dpi=400)
+
+    def plot_performance(self):
+        plt.clf()
+        fig, ax1 = plt.subplots()
+        title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Performance', fontsize=16, wrap=True)
+        ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
+        ax1.set_ylabel('MFLOPS', fontsize=14)
+        if self.y_max is not None:
+            plt.ylim(top=self.y_max['performance'])
+        if self.y_min is not None:
+            plt.ylim(bottom=self.y_min['performance'])
+        performance = self.means['mflops'].to_numpy()
+        ax1.grid(True, alpha=0.4)
+        ax1.plot(self.x_axis_values, performance, marker='o')
+        for plot in self.additional_plots['performance']:
+            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"])
+        fig.tight_layout()
+        plt.subplots_adjust(top=0.9)
+        title.set_y(1.05)
+        plt.savefig(f"{self.graph_name_for_file}_performance.png", dpi=400)
+
+    def plot_efficiency(self):
+        plt.clf()
+        fig, ax1 = plt.subplots()
+        title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Efficiency', fontsize=16, wrap=True)
+        ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
+        ax1.set_ylabel('MFLOPS/W', fontsize=14)
+        if self.y_max is not None:
+            plt.ylim(top=self.y_max['efficiency'])
+        if self.y_min is not None:
+            plt.ylim(bottom=self.y_min['efficiency'])
+        efficiency = self.means['mflops_w'].to_numpy()
+        ax1.grid(True, alpha=0.4)
+        ax1.plot(self.x_axis_values, efficiency, marker='o')
+        for plot in self.additional_plots['efficiency']:
+            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"])
+        fig.tight_layout()
+        plt.subplots_adjust(top=0.9)
+        title.set_y(1.05)
+        plt.savefig(f"{self.graph_name_for_file}_efficiency.png", dpi=400)
+
+    def plot_kernel_percent_peak(self):
+        plt.clf()
+        line_types = ['-.', '--', (0, (5, 10)), ':', '-.', '--', (0, (5, 10)), ':']
+        line_color= ['cornflowerblue', 'mediumseagreen', 'darkorange', 'red']
+        fig, ax1 = plt.subplots()
+        title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Efficiency', fontsize=16, wrap=True)
+        ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
+        ax1.set_ylabel('% of Peak Measured Flops', fontsize=14)
+        for i, knao in enumerate(self.kernel_names_and_ops):
+            _, column_name, _ = knao
+            performance_over_peak = self.means[f"{column_name}_percent_peak"].to_numpy()
+            plt.plot(self.x_axis_values, performance_over_peak, linestyle=line_types[i], label=column_name.replace("_", " "), color=line_color[i])
+        for plot in self.additional_plots['kernel_percent_peak']:
+            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"])
+        ax1.grid(True, alpha=0.4)
+        plt.legend(title='Kernel')
+        fig.tight_layout()
+        plt.subplots_adjust(top=0.9)
+        title.set_y(1.05)
+        plt.savefig(f"{self.graph_name_for_file}_kernel_percent_peak.png", dpi=400)
+
+
+
 
     def clear_normalization(self):
         self.y_max = None
@@ -137,7 +169,45 @@ class Graph:
 
 
 
+    def add_plot(self, graph_type, x_axis, y_axis, err=None, color=None, label=None):
+        self.additional_plots[graph_type].append({
+            "x_axis": x_axis,
+            "y_axis": y_axis,
+            "err": err,
+            "color": color,
+            "label": label
+        })
+    
+    def add_plot(self, graph, graph_type, include_err=False, color=None, label=None):
+        if graph_type == 'power':
+            y_axis = graph.means['run_power_w']
+            if include_err:
+                err = graph.stds['run_power_w']
+            else:
+                err = None
+        if graph_type == 'performance':
+            y_axis = graph.means['mflops']
+            if include_err:
+                err = graph.stds['mflops']
+            else:
+                err = None
+        if graph_type == 'efficiency':
+            y_axis = graph.means['mflops_w']
+            if include_err:
+                err = graph.stds['mflops_w']
+            else:
+                err = None
+        if graph_type == 'kernel_percent_peak':
+            # I haven't figured this one out yet, and I also don't care to
+            return
 
+        self.additional_plots[graph_type].append({
+            "x_axis": graph.x_axis_values,
+            "y_axis": y_axis,
+            "err": err,
+            "color": color,
+            "label": label
+        })
     
 def normalize_graphs(graphs):
 

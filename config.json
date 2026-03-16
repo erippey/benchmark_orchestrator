@@ -25,7 +25,7 @@
   },
   "tests": [
     {
-      "name": "CPU_test_3",
+      "name": "FFTW_arm_freq_powersave",
       "executable": "./fftw_ola_bench",
       "governor": "powersave",
       "fixed_config": {
@@ -34,14 +34,14 @@
       },
       "sweep": {
         "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
+        "values": [2000]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
       "max_runtime_sec": 600
     },
     {
-      "name": "CPU_test_4",
+      "name": "PoCL_arm_freq_powersave",
       "executable": "./pocl_ola_bench",
       "governor": "powersave",
       "fixed_config": {
@@ -50,14 +50,42 @@
       },
       "sweep": {
         "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
+        "values": [2000]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
       "max_runtime_sec": 600
     },
     {
-      "name": "GPU_test_1",
+      "name": "FFTW_arm_freq_performance",
+      "executable": "./fftw_ola_bench",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2000, 1600]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "PoCL_arm_freq_performance",
+      "executable": "./pocl_ola_bench",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600]
+      },
+      "total_iterations": 9,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "clvk_arm_freq_powersave",
       "executable": "./clvk_ola_bench",
       "governor": "powersave",
       "fixed_config": {
@@ -68,35 +96,21 @@
         "var": "v3d_freq_min",
         "values": [500, 550, 600, 650, 700, 750, 800, 850, 900, 960]
       },
-      "total_iterations": 6,
+      "total_iterations": 3,
       "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
       "max_runtime_sec": 600
     },
     {
-      "name": "CPU_test_1",
+      "name": "FFTW_arm_freq_performance",
       "executable": "./fftw_ola_bench",
       "governor": "performance",
       "fixed_config": {
       },
       "sweep": {
         "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600]
       },
-      "total_iterations": 6,
-      "tag_fields": ["arm_freq"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "CPU_test_2",
-      "executable": "./pocl_ola_bench",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
-      },
-      "total_iterations": 6,
+      "total_iterations": 3,
       "tag_fields": ["arm_freq"],
       "max_runtime_sec": 600
     }

@@ -6,7 +6,7 @@ Governor: powersave
 
 Independant Variable: arm_freq_min
 arm_freq: 0
-arm_freq_min: 2300
+arm_freq_min: 2400
 core_freq: 0
 core_freq_min: 500
 v3d_freq: 0

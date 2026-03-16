@@ -27,7 +27,7 @@ class CM5DeviceManager:
     def set_ssh_client(self, ssh_client):
         self.client = ssh_client
 
-    def save_medadata(self, params, root_dir, date):
+    def save_metadata(self, params, root_dir, date):
         metadata = []
 
         metadata.append(f"Date: {date}")
@@ -40,16 +40,14 @@ class CM5DeviceManager:
         metadata.append(f"Independant Vairable: {params['independant_var']}")
         
         for var_name in self.managed_keys:
-            value = self.cfg['config'].get(var_name)
+            value = params['config'].get(var_name)
 
             if value:
                 metadata.append(f"{var_name}: {value}")
             else:
                 metadata.append(f"{var_name}: 0")
 
-        if not root_dir.endswith('/'): 
-            root_dir.append('/')
-        with open(f"{root_dir}config_metadata.txt", "w") as meta_file:
+        with open(root_dir / "config_metadata.txt", "w") as meta_file:
             for line in metadata:
                 meta_file.write(f"{line}\n")
 
