@@ -78,10 +78,11 @@ class Graph:
 
 
             
-    def plot_power(self):
+    def plot_power(self, label=None, legend_title=None):
         plt.clf()
+        show_label = label is not None and legend_title is not None
         fig, ax1 = plt.subplots()
-        title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V AVerage Power Consumption', fontsize=16, wrap=True)
+        title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Average Power Consumption', fontsize=16, wrap=True)
         ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
         ax1.set_ylabel('Average Power (W)', fontsize=14)
         if self.y_max is not None:
@@ -91,16 +92,21 @@ class Graph:
         power = self.means['run_power_w'].to_numpy()
         power_err = self.stds['run_power_w'].to_numpy()
         ax1.grid(True, alpha=0.4)
-        plt.errorbar(self.x_axis_values, power, yerr=power_err, marker='o', capsize=4)
+        plt.errorbar(self.x_axis_values, power, yerr=power_err, marker='o', capsize=4, label=label)
         for plot in self.additional_plots['power']:
-            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"])
+            if plot["label"] is not None:
+                show_label = True
+            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"], marker=plot["marker"], capsize=4)
+        if show_label:
+            plt.legend(title=legend_title)
         fig.tight_layout()
         plt.subplots_adjust(top=0.9)
         title.set_y(1.05)
         plt.savefig(f"{self.graph_name_for_file}_power.png", dpi=400)
 
-    def plot_performance(self):
+    def plot_performance(self, label=None, legend_title=None):
         plt.clf()
+        show_label = label is not None and legend_title is not None
         fig, ax1 = plt.subplots()
         title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Performance', fontsize=16, wrap=True)
         ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
@@ -111,16 +117,21 @@ class Graph:
             plt.ylim(bottom=self.y_min['performance'])
         performance = self.means['mflops'].to_numpy()
         ax1.grid(True, alpha=0.4)
-        ax1.plot(self.x_axis_values, performance, marker='o')
+        ax1.plot(self.x_axis_values, performance, marker='o', label=label)
         for plot in self.additional_plots['performance']:
-            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"])
+            if plot["label"] is not None:
+                show_label = True
+            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"], marker=plot["marker"])
+        if show_label:
+            plt.legend(title=legend_title)
         fig.tight_layout()
         plt.subplots_adjust(top=0.9)
         title.set_y(1.05)
         plt.savefig(f"{self.graph_name_for_file}_performance.png", dpi=400)
 
-    def plot_efficiency(self):
+    def plot_efficiency(self, label=None, legend_title=None):
         plt.clf()
+        show_label = label is not None and legend_title is not None
         fig, ax1 = plt.subplots()
         title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Efficiency', fontsize=16, wrap=True)
         ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
@@ -131,9 +142,13 @@ class Graph:
             plt.ylim(bottom=self.y_min['efficiency'])
         efficiency = self.means['mflops_w'].to_numpy()
         ax1.grid(True, alpha=0.4)
-        ax1.plot(self.x_axis_values, efficiency, marker='o')
+        ax1.plot(self.x_axis_values, efficiency, marker='o', label=label)
         for plot in self.additional_plots['efficiency']:
-            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"])
+            if plot["label"] is not None:
+                show_label = True
+            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"], marker=plot["marker"], capsize=4)
+        if show_label:
+            plt.legend(title=legend_title)
         fig.tight_layout()
         plt.subplots_adjust(top=0.9)
         title.set_y(1.05)
@@ -152,7 +167,7 @@ class Graph:
             performance_over_peak = self.means[f"{column_name}_percent_peak"].to_numpy()
             plt.plot(self.x_axis_values, performance_over_peak, linestyle=line_types[i], label=column_name.replace("_", " "), color=line_color[i])
         for plot in self.additional_plots['kernel_percent_peak']:
-            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"])
+            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"], marker=plot["marker"], capsize=4)
         ax1.grid(True, alpha=0.4)
         plt.legend(title='Kernel')
         fig.tight_layout()
@@ -169,16 +184,17 @@ class Graph:
 
 
 
-    def add_plot(self, graph_type, x_axis, y_axis, err=None, color=None, label=None):
+    def add_plot(self, graph_type, x_axis, y_axis, err=None, color=None, label=None, marker=None):
         self.additional_plots[graph_type].append({
             "x_axis": x_axis,
             "y_axis": y_axis,
             "err": err,
             "color": color,
-            "label": label
+            "label": label,
+            "marker": marker
         })
     
-    def add_plot(self, graph, graph_type, include_err=False, color=None, label=None):
+    def add_graph_plot(self, graph, graph_type, include_err=False, color=None, label=None, marker=None):
         if graph_type == 'power':
             y_axis = graph.means['run_power_w']
             if include_err:
@@ -206,7 +222,8 @@ class Graph:
             "y_axis": y_axis,
             "err": err,
             "color": color,
-            "label": label
+            "label": label,
+            "marker": marker
         })
     
 def normalize_graphs(graphs):
@@ -299,4 +316,9 @@ if __name__ == "__main__":
     fftw_graph_pf.plot()
     fftw_graph_ps.plot()
     pocl_graph.plot()
+
+    fftw_graph_ps.add_graph_plot(fftw_graph_pf, "power", include_err=True, color="salmon", label="Performance", marker="o")
+    fftw_graph_ps.add_graph_plot(fftw_graph_pf, "efficiency", include_err=True, color="salmon", label="Performance", marker="o")
+    fftw_graph_ps.plot_power(label="powersave", legend_title="Governor")
+    fftw_graph_ps.plot_efficiency(label="powersave", legend_title="Governor")
     
