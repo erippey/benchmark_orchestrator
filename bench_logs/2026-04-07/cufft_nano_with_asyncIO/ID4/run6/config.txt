@@ -1,0 +1,9 @@
+Config_Name: 306MHz_GPU
+Config_ID: 4
+ID: 4
+cores_online: 6
+cpu_freq_max: 729600
+cpu_freq_min: 729600
+gpu_freq_max: 306000000
+gpu_freq_min: 306000000
+emc_max_freq: 2133000000

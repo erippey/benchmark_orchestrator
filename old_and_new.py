@@ -249,11 +249,6 @@ kernel_names_and_ops = {
 fftw_graph = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using FFTW\N{RIGHTWARDS ARROW}CPU", 
             test_name="FFTW_arm_freq_performance", graph_name_for_file="graphs/fftw_performance", kernel_names_and_ops=kernel_names_and_ops, 
             total_ops=76646414974, peak_mflops=38374)
-    
-independent_variable = {
-    "var_name": "arm_freq_min",
-    "proper_name": "CPU Frequency (MHz)"
-}
 
 kernel_names_and_ops = {
     ("Forward FFT Execution Time", "forward", 4587520),
@@ -263,7 +258,7 @@ kernel_names_and_ops = {
 }
 
 pocl_graph = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using PoCL\N{RIGHTWARDS ARROW}CPU", 
-                test_name="PoCL_arm_freq_powersave", graph_name_for_file="graphs/pocl_powersave", kernel_names_and_ops=kernel_names_and_ops, 
+                test_name="PoCL_arm_freq_performance", graph_name_for_file="graphs/pocl_performance", kernel_names_and_ops=kernel_names_and_ops, 
                 total_ops=76646414974, peak_mflops=38374)
 
 clvk_graph.add_plot("efficiency", clvk_frequencies, clvk_mflops_w, color="coral", label="03-02-2026", marker="o")
@@ -277,3 +272,9 @@ fftw_graph.add_plot("power", fftw_frequencies, fftw_power, err=fftw_power_std, c
 
 fftw_graph.plot_power(label="03-16-2026", legend_title="Date Presented")
 fftw_graph.plot_efficiency(label="03-16-2026", legend_title="Date Presented")
+
+pocl_graph.add_plot("efficiency", pocl_frequencies, pocl_mflops_w, color="coral", label="03-02-2026", marker="o")
+pocl_graph.add_plot("power", pocl_frequencies, pocl_power, err=pocl_power_std, color="coral", label="03-02-2026", marker="o")
+
+pocl_graph.plot_power(label="03-16-2026", legend_title="Date Presented")
+pocl_graph.plot_efficiency(label="03-16-2026", legend_title="Date Presented")

@@ -1,0 +1,17 @@
+Date: 2026-03-16
+Device: Raspberry Pi Compute Module 5
+Test Name: clvk_arm_freq_powersave
+Executable: ./clvk_ola_bench
+Governor: powersave
+
+Independant Vairable: v3d_freq_min
+arm_freq: 0
+arm_freq_min: 1200
+core_freq: 0
+core_freq_min: 500
+v3d_freq: 0
+v3d_freq_min: 500
+gpu_freq: 0
+gpu_freq_min: 0
+over_voltage: 0
+over_voltage_min: 0

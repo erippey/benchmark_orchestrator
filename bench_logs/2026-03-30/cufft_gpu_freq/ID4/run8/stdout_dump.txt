@@ -1,0 +1,224 @@
+format IEEE Float
+channels 1
+sample rate 44100
+valid bits per sample 32
+sample size 4
+length 21368782
+channel mask 0
+sub-format 0
+Starting warmup runs....
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+Warmup runs complete
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+L_block: 13338, N_fft: 16384, Batch Size: 12
+Batches Left: 1603
+number of spans 2040
+Benchmark FFT Convolution running on device CPU Single Thread
+
+Event 0: Convolution
+  Runs      : 20
+  Avg time  : 601.112698 milliseconds
+  Min time  : 595.793056 milliseconds
+  Max time  : 605.982688 milliseconds
+  Std Dev   : 3.412903 milliseconds
+
+Event 1: Total Execution
+  Runs      : 1
+  Avg time  : 12022.336800 milliseconds
+  Min time  : 12022.336800 milliseconds
+  Max time  : 12022.336800 milliseconds
+  Std Dev   : 0.000000 milliseconds
+
+Event 2: FFT Execution Time
+  Runs      : 3
+  Avg time  : 616.014741 milliseconds
+  Min time  : 614.485056 milliseconds
+  Max time  : 617.497216 milliseconds
+  Std Dev   : 1.506635 milliseconds
+

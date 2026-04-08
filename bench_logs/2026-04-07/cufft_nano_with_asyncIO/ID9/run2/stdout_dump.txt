@@ -1,0 +1,62 @@
+format IEEE Float
+channels 1
+sample rate 44100
+valid bits per sample 32
+sample size 4
+length 21368782
+channel mask 0
+sub-format 0
+Starting warmup runs....
+Warmup runs complete
+number of spans 4101
+Benchmark FFT Convolution running on device CPU Single Thread
+
+Event 0: Convolution
+  Runs      : 20
+  Avg time  : 62.386845 milliseconds
+  Min time  : 60.651200 milliseconds
+  Max time  : 85.734720 milliseconds
+  Std Dev   : 5.572494 milliseconds
+
+Event 1: Total Execution
+  Runs      : 1
+  Avg time  : 1247.816672 milliseconds
+  Min time  : 1247.816672 milliseconds
+  Max time  : 1247.816672 milliseconds
+  Std Dev   : 0.000000 milliseconds
+
+Event 2: FFT Execution Time
+  Runs      : 0
+  Avg time  : 0.000000 milliseconds
+  Min time  : inf milliseconds
+  Max time  : -inf milliseconds
+  Std Dev   : 0.000000 milliseconds
+
+Event 3: Forward FFT
+  Runs      : 1020
+  Avg time  : 0.248733 milliseconds
+  Min time  : 0.221888 milliseconds
+  Max time  : 0.590816 milliseconds
+  Std Dev   : 0.058559 milliseconds
+
+Event 4: Complex Multiply
+  Runs      : 1020
+  Avg time  : 0.017204 milliseconds
+  Min time  : 0.014336 milliseconds
+  Max time  : 0.073024 milliseconds
+  Std Dev   : 0.003241 milliseconds
+
+Event 5: Inverse FFT
+  Runs      : 1020
+  Avg time  : 0.424781 milliseconds
+  Min time  : 0.223648 milliseconds
+  Max time  : 0.650944 milliseconds
+  Std Dev   : 0.056398 milliseconds
+
+Event 6: Overlap Add
+  Runs      : 1020
+  Avg time  : 1.105123 milliseconds
+  Min time  : 0.104320 milliseconds
+  Max time  : 1.278592 milliseconds
+  Std Dev   : 0.141967 milliseconds
+

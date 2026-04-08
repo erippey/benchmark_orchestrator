@@ -32,11 +32,13 @@ class BenchmarkRunner:
         self.logger = RunLogger(config["host"]["log_root"])
 
         dut = config["dut"]
+        ip = config.get("backup_ip") # backup ip may or may not exist
 
         self.client = DUTClient(
             dut["hostname"],
             dut["username"],
-            root_access=dut["root_access"]
+            root_access=dut["root_access"],
+            backup_ip=ip
         )
 
         self.tests = expand_tests(config)
@@ -69,6 +71,8 @@ class BenchmarkRunner:
 
 
     def run(self):
+
+        does_device_need_root=True
 
         self.meter.start_stream(self.cfg["host"]["sample_interval_sec"])
 
@@ -103,6 +107,8 @@ class BenchmarkRunner:
                         with open(f"{run_dir}/config.txt", "w") as config_file:
                             config_file.write(config_txt)
 
+                        print("Connected to DUT, starting idle cooldown time")
+
 
                         time.sleep(self.cfg["retry"]["cooldown_sec"])
 
@@ -121,7 +127,7 @@ class BenchmarkRunner:
                         print(f"Idle power measurements finished, running {test['executable']}")
 
                         # remove trigger file
-                        self.client.run(f"rm -f {comm_file}")
+                        self.client.run(f"rm -f {comm_file}", as_root=does_device_need_root)
 
                         exe = test["executable"]
                         build = self.cfg["dut"]["build_dir"]
@@ -142,9 +148,9 @@ class BenchmarkRunner:
                             f"echo $! > {remote_log_dir}/run.pid)"
                         )
 
-                        code, text, err = self.client.run(cmd, async_run=True)
+                        code, text, err = self.client.run(cmd, async_run=True, as_root=does_device_need_root)
                         
-                        code, pid, _ = self.client.run(f"cat {remote_log_dir}/run.pid")
+                        code, pid, _ = self.client.run(f"cat {remote_log_dir}/run.pid", as_root=does_device_need_root)
                         pid = pid.strip()
                         if not pid:
                             raise Exception("Failed to capture benchmark PID")
@@ -157,7 +163,7 @@ class BenchmarkRunner:
                         print("Stable power achieved, beginnining recording performance and power draw...")
 
                         # trigger benchmark
-                        self.client.run(f"touch {comm_file}")
+                        self.client.run(f"touch {comm_file}", as_root=does_device_need_root)
 
                         # start logging run power
                         f, writer = self.logger.open_power_log(run_dir, "run_power.csv")
@@ -181,14 +187,14 @@ class BenchmarkRunner:
                             if now - last_check > 5:
                                 # check if benchmark finished
                                 code, out, _ = self.client.run(
-                                    f"test -f {comm_file} && cat {comm_file}"
+                                    f"test -f {comm_file} && cat {comm_file}", as_root=does_device_need_root
                                 )
 
                                 if code == 0 and "done" in out:
                                     break
 
                                 code, out, err = self.client.run(
-                                    f"kill -0 {pid}"
+                                    f"kill -0 {pid}", as_root=does_device_need_root
                                 )
                                 alive = (code == 0)
 
@@ -197,7 +203,7 @@ class BenchmarkRunner:
                                 
                                 if now - test_start > test["max_runtime_sec"]:
                                     code, out, _ = self.client.run(
-                                        f("kill {pid}")
+                                        f("kill {pid}"), as_root=does_device_need_root
                                     )
                                     raise Exception("Benchmark timeout")
 

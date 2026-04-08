@@ -1,0 +1,9 @@
+Config_Name: 1190MHz_CPU
+Config_ID: 9
+ID: 9
+cores_online: 6
+cpu_freq_max: 1190400
+cpu_freq_min: 1190400
+gpu_freq_max: 612000000
+gpu_freq_min: 0
+emc_max_freq: 2133000000

@@ -14,7 +14,7 @@ class RunLogger:
 
         today = date
 
-        base = self.root / today / f"{test_name}_{tag}"
+        base = self.root / today / f"{test_name}" / f"{tag}"
         base.mkdir(parents=True, exist_ok=True)
 
         run_id = 1

@@ -14,10 +14,10 @@
             "args": "${command:pickArgs}"
         },
         {
-            "name": "test_stability.py",
+            "name": "old_and_new.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "C:/Users/erippey3/Documents/benchmark_orchestrator/test_stability.py",
+            "program": "C:/Users/erippey3/Documents/benchmark_orchestrator/old_and_new.py",
             "console": "integratedTerminal",
         },
                 {

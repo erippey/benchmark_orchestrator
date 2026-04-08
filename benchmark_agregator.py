@@ -21,6 +21,44 @@ PI_MANAGED_KEYS = [
     "over_voltage_min",
 ]
 
+NANO_MANAGED_KEYS = [
+    "TestName",
+    "Device",
+    "Governor",
+    "Config_Name",
+    "Config_ID",
+    "cores_online",
+    "cpu_freq_max",
+    "cpu_freq_min",
+    "gpu_freq_max",
+    "gpu_freq_min",
+    "emc_max_freq",
+]
+
+ALL_MANAGED_KEYS = [
+    "TestName",
+    "Device",
+    "Governor",
+    "arm_freq",
+    "arm_freq_min",
+    "core_freq",
+    "core_freq_min",
+    "v3d_freq",
+    "v3d_freq_min",
+    "gpu_freq",
+    "gpu_freq_min",
+    "over_voltage",
+    "over_voltage_min",
+    "Config_Name",
+    "Config_ID",
+    "cores_online",
+    "cpu_freq_max",
+    "cpu_freq_min",
+    "gpu_freq_max",
+    "gpu_freq_min",
+    "emc_max_freq",
+]
+
 RUN_METADATA_KEYS = [
     "Signal_Length",
     "Filter_Length",
@@ -32,8 +70,6 @@ RUN_METADATA_KEYS = [
     "Sample_Format",
 ]
 
-
-CONFIG_KEYS = PI_MANAGED_KEYS
 
 PERFORMANCE_KEYS = [
     "conv_avg_ms",
@@ -48,10 +84,11 @@ POWER_KEYS = [
 
 class BenchmarkAggregator:
 
-    def __init__(self, root, additional_keys=None):
+    def __init__(self, root, additional_keys=[], config_keys=PI_MANAGED_KEYS):
         self.root = Path(root)
         self.rows = []
 
+        self.config_managed_keys = config_keys
         self.additional_keys = additional_keys
 
     # -----------------------------
@@ -122,7 +159,7 @@ class BenchmarkAggregator:
 
     def parse_config_metadata(self, path):
 
-        values = {k: 0 for k in PI_MANAGED_KEYS}
+        values = {k: 0 for k in self.config_managed_keys}
 
         if not path.exists():
             return values
@@ -295,7 +332,7 @@ class BenchmarkAggregator:
         fieldnames = (
             ["run_dir"]
             + RUN_METADATA_KEYS
-            + CONFIG_KEYS
+            + self.config_managed_keys
             + PERFORMANCE_KEYS
             + self.additional_keys
             + POWER_KEYS
@@ -321,7 +358,9 @@ if __name__ == "__main__":
         "Overlap Add"
     ]
 
-    agg = BenchmarkAggregator("bench_logs", ADDITIONAL_KEYS)
+
+
+    agg = BenchmarkAggregator("bench_logs", ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
 
     agg.aggregate()
 
