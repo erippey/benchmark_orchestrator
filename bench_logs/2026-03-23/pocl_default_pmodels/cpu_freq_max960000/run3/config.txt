@@ -1,8 +1,0 @@
-Config_Name: 7W
-Config_ID: 3
-cores_online: 4
-cpu_freq_max: 960000
-cpu_freq_min: 729600
-gpu_freq_max: 408000000
-gpu_freq_min: 0
-emc_max_freq: 2133000000

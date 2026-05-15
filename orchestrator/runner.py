@@ -86,6 +86,20 @@ class BenchmarkRunner:
 
             tag = config_tag(test["config"], test["tag_fields"])
 
+            config_txt = ""
+
+            for i in range(self.cfg["retry"]["max_attempts"]):
+                try: 
+                    self.client.connect()
+                    
+                    config_txt = self.device_manager.apply_config(test)
+
+                    break
+
+                except Exception as e:
+                    print("Failure:", e)
+                    time.sleep(self.cfg["retry"]["cooldown_sec"])
+
             for iteration in range(test["iterations"]):
 
                 run_dir = self.logger.new_run_dir(test["name"], tag, self.date)
@@ -100,10 +114,6 @@ class BenchmarkRunner:
 
                     try:
 
-                        self.client.connect()
-
-
-                        config_txt = self.device_manager.apply_config(test)
                         with open(f"{run_dir}/config.txt", "w") as config_file:
                             config_file.write(config_txt)
 
@@ -133,7 +143,7 @@ class BenchmarkRunner:
                         build = self.cfg["dut"]["build_dir"]
 
                         # build remote log directory
-                        remote_log_dir = f"{build}/bench_logs/{run_dir.name}"
+                        remote_log_dir = f"{build}/bench_logs/{test['name']}/{run_dir.name}"
 
                         self.client.run(f"mkdir -p {remote_log_dir}")
 

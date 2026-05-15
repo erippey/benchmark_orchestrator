@@ -7,8 +7,8 @@ def main():
 
     config = load_config("config.json")
 
-    # manager = CM5DeviceManager(config)
-    manager = NanoDeviceManager(config)
+    manager = CM5DeviceManager(config)
+    # manager = NanoDeviceManager(config)
 
     runner = BenchmarkRunner(config, manager)
 

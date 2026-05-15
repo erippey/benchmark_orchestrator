@@ -68,6 +68,8 @@ RUN_METADATA_KEYS = [
     "Batch_Size",
     "Algorithm_Data_Type",
     "Sample_Format",
+    "Banks",
+    "Channels"
 ]
 
 
@@ -131,6 +133,8 @@ class BenchmarkAggregator:
             "BatchSize": "Batch_Size",
             "Algorithmdatatype": "Algorithm_Data_Type",
             "Sampleformat": "Sample_Format",
+            "Banks": "Banks",
+            "Channels": "Channels"
         }
 
         with open(path, "r", encoding="utf-8") as f:
@@ -353,14 +357,13 @@ if __name__ == "__main__":
 
     ADDITIONAL_KEYS = [
         "Forward FFT Execution Time",
-        "Complex Multiply Execution Time",
+        "Multiply Accumulate Execution Time",
         "Inverse FFT Execution Time",
-        "Overlap Add"
     ]
 
 
 
-    agg = BenchmarkAggregator("bench_logs", ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
+    agg = BenchmarkAggregator("bench_logs/upols_stream_tests", ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
 
     agg.aggregate()
 

@@ -1,9 +1,0 @@
-Config_Name: 1267MHz_CPU
-Config_ID: 10
-ID: 10
-cores_online: 6
-cpu_freq_max: 1267200
-cpu_freq_min: 1267200
-gpu_freq_max: 612000000
-gpu_freq_min: 0
-emc_max_freq: 2133000000

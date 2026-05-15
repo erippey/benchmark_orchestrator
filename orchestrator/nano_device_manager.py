@@ -441,7 +441,7 @@ class NanoDeviceManager:
         for known in known_configurations_2:
             same = True
             for key in self.managed_keys:
-                if not run_config.get(key):
+                if run_config.get(key) is None:
                     continue
                 if run_config.get(key) != known.get(key):
                     same = False
