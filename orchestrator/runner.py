@@ -137,7 +137,7 @@ class BenchmarkRunner:
                         print(f"Idle power measurements finished, running {test['executable']}")
 
                         # remove trigger file
-                        self.client.run(f"rm -f {comm_file}", as_root=does_device_need_root)
+                        self.client.run(f"rm -f {comm_file}", as_root=does_device_need_root, safe_to_retry=False)
 
                         exe = test["executable"]
                         build = self.cfg["dut"]["build_dir"]
@@ -213,7 +213,7 @@ class BenchmarkRunner:
                                 
                                 if now - test_start > test["max_runtime_sec"]:
                                     code, out, _ = self.client.run(
-                                        f("kill {pid}"), as_root=does_device_need_root
+                                        f(f"kill {pid}"), as_root=does_device_need_root
                                     )
                                     raise Exception("Benchmark timeout")
 
