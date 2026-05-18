@@ -20,12 +20,20 @@
             "program": "C:/Users/erippey3/Documents/benchmark_orchestrator/old_and_new.py",
             "console": "integratedTerminal",
         },
-                {
+        {
             "name": "benchmark_aggregate.py",
             "type": "debugpy",
             "request": "launch",
             "program": "C:/Users/EMini/Documents/benchmark_orchestrator/benchmark_agregator.py",
             "console": "integratedTerminal",
+        },
+        {
+            "name": "unmeasured_main.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "unmeasured_main.py",
+            "console": "integratedTerminal",
+            "args": "${command:pickArgs}"
         }
     ]
 }

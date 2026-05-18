@@ -2,14 +2,14 @@
   "host": {
     "wattsup_com_port": "COM3",
     "sample_interval_sec": 1.0,
-    "log_root": "C:/Users/erippey3/Documents/benchmark_orchestrator/bench_logs/upols_stream_tests"
+    "log_root": "/home/etower/Documents/benchmark_orchestrator/bench_logs/upols_stream_tests"
   },
   "dut": {
-    "hostname": "ritvik-RPI5",
-    "username": "ritvik",
-    "backup_ip": "100.65.105.181",
+    "hostname": "pharaoh.local",
+    "username": "dev",
+    "backup_ip": "192.168.44.8",
     "root_access": true,
-    "build_dir": "/home/ritvik/edgedevice-fft/build",
+    "build_dir": "/home/dev/Local_Code/edgedevice-fft/build",
     "config_txt": "/boot/firmware/config.txt",
     "comm_file": "/tmp/ready"
   },
@@ -26,33 +26,71 @@
   },
   "tests": [
     {
-      "name": "fftw_upols_vs_arm_freq_powersave_16_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
+      "name": "fftw_upols_vs_A55_freq_powersave_16_banks",
+      "executable": "taskset -c 0-3 nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
       "governor": "powersave",
       "fixed_config": {
-        "v3d_freq_min": 500,
-        "core_freq_min": 500
+        "policy4_freq": 408000,
+        "policy6_freq": 408000,
+        "gpu_freq": 300000000
       },
       "sweep": {
-        "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
+        "var": "policy0_freq",
+        "values": [408000, 600000, 816000, 1008000, 1200000, 1416000, 1608000, 1800000]
       },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
+      "total_iterations": 4,
+      "tag_fields": ["policy0_freq", "policy4_freq", "policy6_freq", "gpu_freq"],
       "max_runtime_sec": 600
     },
     {
-      "name": "ffrw_upols_vs_arm_freq_performance_16_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
+      "name": "ffrw_upols_vs_A55_freq_performance_16_banks",
+      "executable": "taskset -c 0-3 nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
       "governor": "performance",
       "fixed_config": {
+        "policy4_freq": 408000,
+        "policy6_freq": 408000,
+        "gpu_freq": 300000000
       },
       "sweep": {
-        "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
+        "var": "policy0_freq",
+        "values": [408000, 600000, 816000, 1008000, 1200000, 1416000, 1608000, 1800000]
       },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq"],
+      "total_iterations": 4,
+      "tag_fields": ["policy0_freq", "policy4_freq", "policy6_freq", "gpu_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "fftw_upols_vs_A76_freq_powersave_16_banks",
+      "executable": "taskset -c 4,5 nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy6_freq": 408000,
+        "gpu_freq": 300000000
+      },
+      "sweep": {
+        "var": "policy4_freq",
+        "values": [408000, 600000, 816000, 1008000, 1200000, 1416000, 1608000, 1800000, 2016000, 2208000, 2256000]
+      },
+      "total_iterations": 4,
+      "tag_fields": ["policy0_freq", "policy4_freq", "policy6_freq", "gpu_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ffrw_upols_vs_A76_freq_performance_16_banks",
+      "executable": "taskset -c 4,5 nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
+      "governor": "performance",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy6_freq": 408000,
+        "gpu_freq": 300000000
+      },
+      "sweep": {
+        "var": "policy4_freq",
+        "values": [408000, 600000, 816000, 1008000, 1200000, 1416000, 1608000, 1800000, 2016000, 2208000, 2256000]
+      },
+      "total_iterations": 4,
+      "tag_fields": ["policy0_freq", "policy4_freq", "policy6_freq", "gpu_freq"],
       "max_runtime_sec": 600
     },
     {
@@ -60,199 +98,16 @@
       "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -p clvk -b 16",
       "governor": "powersave",
       "fixed_config": {
-        "arm_freq_min": 1500,
-        "core_freq_min": 500
+        "policy0_freq": 408000,
+        "policy4_freq": 408000,
+        "policy6_freq": 408000
       },
       "sweep": {
-        "var": "v3d_freq_min",
-        "values": [500, 550, 600, 650, 700, 750, 800, 850, 900, 960]
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
       },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "fftw_upols_vs_arm_freq_powersave_8_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 8",
-      "governor": "powersave",
-      "fixed_config": {
-        "v3d_freq_min": 500,
-        "core_freq_min": 500
-      },
-      "sweep": {
-        "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "ffrw_upols_vs_arm_freq_performance_8_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 8",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "clfft_upols_vs_v3d_freq_8_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -p clvk -b 8",
-      "governor": "powersave",
-      "fixed_config": {
-        "arm_freq_min": 1500,
-        "core_freq_min": 500
-      },
-      "sweep": {
-        "var": "v3d_freq_min",
-        "values": [500, 550, 600, 650, 700, 750, 800, 850, 900, 960]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "fftw_upols_vs_arm_freq_powersave_4_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 4",
-      "governor": "powersave",
-      "fixed_config": {
-        "v3d_freq_min": 500,
-        "core_freq_min": 500
-      },
-      "sweep": {
-        "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "ffrw_upols_vs_arm_freq_performance_4_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 4",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "clfft_upols_vs_v3d_freq_4_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -p clvk -b 4",
-      "governor": "powersave",
-      "fixed_config": {
-        "arm_freq_min": 1500,
-        "core_freq_min": 500
-      },
-      "sweep": {
-        "var": "v3d_freq_min",
-        "values": [500, 550, 600, 650, 700, 750, 800, 850, 900, 960]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "fftw_upols_vs_arm_freq_powersave_2_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 2",
-      "governor": "powersave",
-      "fixed_config": {
-        "v3d_freq_min": 500,
-        "core_freq_min": 500
-      },
-      "sweep": {
-        "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "ffrw_upols_vs_arm_freq_performance_2_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 2",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "clfft_upols_vs_v3d_freq_2_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -p clvk -b 2",
-      "governor": "powersave",
-      "fixed_config": {
-        "arm_freq_min": 1500,
-        "core_freq_min": 500
-      },
-      "sweep": {
-        "var": "v3d_freq_min",
-        "values": [500, 550, 600, 650, 700, 750, 800, 850, 900, 960]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "fftw_upols_vs_arm_freq_powersave_1_bank",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 1",
-      "governor": "powersave",
-      "fixed_config": {
-        "v3d_freq_min": 500,
-        "core_freq_min": 500
-      },
-      "sweep": {
-        "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "ffrw_upols_vs_arm_freq_performance_1_bank",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 1",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "clfft_upols_vs_v3d_freq_1_bank",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -p clvk -b 1",
-      "governor": "powersave",
-      "fixed_config": {
-        "arm_freq_min": 1500,
-        "core_freq_min": 500
-      },
-      "sweep": {
-        "var": "v3d_freq_min",
-        "values": [500, 550, 600, 650, 700, 750, 800, 850, 900, 960]
-      },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
+      "total_iterations": 4,
+      "tag_fields": ["policy0_freq", "policy4_freq", "policy6_freq", "gpu_freq"],
       "max_runtime_sec": 600
     }
   ]
