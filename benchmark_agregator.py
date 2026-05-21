@@ -35,29 +35,45 @@ NANO_MANAGED_KEYS = [
     "emc_max_freq",
 ]
 
-ALL_MANAGED_KEYS = [
+OPI_MANAGED_KEYS = [
     "TestName",
     "Device",
-    "Governor",
-    "arm_freq",
-    "arm_freq_min",
-    "core_freq",
-    "core_freq_min",
-    "v3d_freq",
-    "v3d_freq_min",
+    "cpu_governor",
+    "cpu_freq",
+    "cpu_freq_min",
+    "cpu_freq_max",
+
+    # Backward-compatible generic governor.
+    # I would treat this as CPU governor unless you explicitly add gpu_governor.
+    "governor",
+
+    # Per-policy CPU controls
+    "policy0_freq",
+    "policy0_freq_min",
+    "policy0_freq_max",
+    "policy4_freq",
+    "policy4_freq_min",
+    "policy4_freq_max",
+    "policy6_freq",
+    "policy6_freq_min",
+    "policy6_freq_max",
+
+    # GPU controls
+    "gpu_governor",
     "gpu_freq",
     "gpu_freq_min",
-    "over_voltage",
-    "over_voltage_min",
-    "Config_Name",
-    "Config_ID",
-    "cores_online",
-    "cpu_freq_max",
-    "cpu_freq_min",
     "gpu_freq_max",
-    "gpu_freq_min",
-    "emc_max_freq",
+
+    # DMC controls, optional for later
+    "dmc_governor",
+    "dmc_freq",
+    "dmc_freq_min",
+    "dmc_freq_max",
 ]
+
+ALL_MANAGED_KEYS = list(set(
+    PI_MANAGED_KEYS + NANO_MANAGED_KEYS + OPI_MANAGED_KEYS
+))
 
 RUN_METADATA_KEYS = [
     "Signal_Length",

@@ -7,65 +7,168 @@ performance_normalize = False
 power_normalize = True
 kernel_normalize = False
 
-
 class Graph:
 
-    def __init__(self, csv_path, independent_variable, graph_name, graph_name_for_file = None, test_name=None,
-                 kernel_names_and_ops=None, power=True, performance=True, total_ops = 0,
-                 efficiency=True, kernel_percent_peak=True, peak_mflops=0.0):
+    def __init__(self, csv_path, independent_variable, graph_name, graph_name_for_file=None,
+                 test_name=None, kernel_names_and_ops=None, total_ops=0, peak_mflops=0.0,
+                 efficiency=True, kernel_percent_peak=True, power=True, performance=True,
+                 latency=True,
+                 drop_lowest_n=0, drop_highest_n=0,
+                 drop_by="total_exec_ms",
+                 outlier_group_cols=None,
+                 min_runs_after_drop=2):
+
         self.csv_path = csv_path
         self.csv = pd.read_csv(csv_path)
+
         if test_name is not None and "TestName" in self.csv.columns:
             self.csv = self.csv[self.csv["TestName"] == test_name].reset_index(drop=True)
+
         self.graph_name = graph_name
-        if graph_name_for_file is None:
-            self.graph_name_for_file = self.graph_name
-        else:
-            self.graph_name_for_file = graph_name_for_file
+        self.graph_name_for_file = graph_name if graph_name_for_file is None else graph_name_for_file
 
         self.kernel_names_and_ops = kernel_names_and_ops
-        self.power=power
-        self.performance=performance and total_ops > 0
-        self.efficiency=efficiency and total_ops > 0
-        self.kernel_percent_peak=kernel_percent_peak and kernel_names_and_ops != None and peak_mflops > 0.0
+        self.power = power
+        self.latency = latency
+        self.performance = performance and total_ops > 0
+        self.efficiency = efficiency and total_ops > 0
+        self.kernel_percent_peak = (
+            kernel_percent_peak
+            and kernel_names_and_ops is not None
+            and peak_mflops > 0.0
+        )
         self.peak_mflops = peak_mflops
 
         self.independent_variable = independent_variable["var_name"]
         self.independent_variable_proper = independent_variable["proper_name"]
 
+        # Keep a copy of the filtered-but-untrimmed data.
+        self.csv_untrimmed = self.csv.copy()
+        self.dropped_outlier_rows = pd.DataFrame()
+        self.outlier_drop_summary = pd.DataFrame()
+
+        if drop_lowest_n > 0 or drop_highest_n > 0:
+            group_cols = outlier_group_cols
+            if group_cols is None:
+                group_cols = [self.independent_variable]
+            elif isinstance(group_cols, str):
+                group_cols = [group_cols]
+
+            self.csv, self.dropped_outlier_rows, self.outlier_drop_summary = (
+                self._drop_extreme_rows_by_group(
+                    df=self.csv,
+                    group_cols=group_cols,
+                    value_col=drop_by,
+                    drop_lowest_n=drop_lowest_n,
+                    drop_highest_n=drop_highest_n,
+                    min_runs_after_drop=min_runs_after_drop,
+                )
+            )
+
         if self.performance or self.efficiency:
             runtime_s = self.csv["total_exec_ms"] / 1000
             self.csv["mflops"] = (total_ops / runtime_s) / 1e6
-        
+
+        if self.latency:
+            self.csv["latency"] = self.csv["conv_avg_ms"]
+
         if self.efficiency:
             self.csv["mflops_w"] = self.csv["mflops"] / self.csv["run_power_w"]
 
         if self.kernel_percent_peak:
             for kernel, column_name, ops in self.kernel_names_and_ops:
                 runtime_s = self.csv[kernel] / 1000
-
                 mflops = (ops / runtime_s) / 1e6
-
                 col = f"{column_name}_percent_peak"
-
                 self.csv[col] = (mflops / self.peak_mflops) * 100
 
         self.grouped = self.csv.groupby(self.independent_variable)
-        
+
         self.means = self.grouped.mean(numeric_only=True)
         self.stds = self.grouped.std(numeric_only=True)
         self.x_axis_values = self.means.index.to_numpy()
 
         self.y_max = None
-        self.y_min = None 
+        self.y_min = None
 
         self.additional_plots = {
             'power': [],
             'performance': [],
             'efficiency': [],
-            'kernel_percent_peak': []
+            'kernel_percent_peak': [],
+            'latency': []
         }
 
+    @staticmethod
+    def _drop_extreme_rows_by_group(df, group_cols, value_col,
+                                    drop_lowest_n=0, drop_highest_n=0,
+                                    min_runs_after_drop=2):
+        if drop_lowest_n < 0 or drop_highest_n < 0:
+            raise ValueError("drop_lowest_n and drop_highest_n must be >= 0")
+
+        missing = [col for col in group_cols + [value_col] if col not in df.columns]
+        if missing:
+            raise KeyError(f"Cannot drop outliers. Missing columns: {missing}")
+
+        drop_reasons = {}
+        summary_rows = []
+
+        for group_key, group in df.groupby(group_cols, dropna=False, sort=False):
+            valid = group[group[value_col].notna()].sort_values(value_col, kind="mergesort")
+            n_valid = len(valid)
+
+            requested_drops = drop_lowest_n + drop_highest_n
+
+            if requested_drops == 0 or n_valid == 0:
+                continue
+
+            if n_valid - requested_drops < min_runs_after_drop:
+                raise ValueError(
+                    f"Outlier trimming would leave too few runs for group {group_key}. "
+                    f"Valid runs: {n_valid}, requested drops: {requested_drops}, "
+                    f"minimum after drop: {min_runs_after_drop}."
+                )
+
+            low_indices = valid.head(drop_lowest_n).index.tolist() if drop_lowest_n else []
+
+            # Avoid double-dropping the same row when a group is small.
+            remaining = valid.drop(index=low_indices)
+
+            high_indices = (
+                remaining.tail(drop_highest_n).index.tolist()
+                if drop_highest_n else []
+            )
+
+            for idx in low_indices:
+                drop_reasons[idx] = f"lowest_{value_col}"
+
+            for idx in high_indices:
+                drop_reasons[idx] = f"highest_{value_col}"
+
+            if not isinstance(group_key, tuple):
+                group_key = (group_key,)
+
+            summary = dict(zip(group_cols, group_key))
+            summary.update({
+                "value_col": value_col,
+                "n_before": len(group),
+                "n_valid_for_drop": n_valid,
+                "dropped_lowest": len(low_indices),
+                "dropped_highest": len(high_indices),
+                "n_after": len(group) - len(low_indices) - len(high_indices),
+            })
+            summary_rows.append(summary)
+
+        drop_indices = list(drop_reasons.keys())
+
+        dropped = df.loc[drop_indices].copy()
+        if not dropped.empty:
+            dropped["outlier_drop_reason"] = dropped.index.map(drop_reasons)
+
+        trimmed = df.drop(index=drop_indices).reset_index(drop=True)
+        summary_df = pd.DataFrame(summary_rows)
+
+        return trimmed, dropped, summary_df
     def plot(self, label=None):
         if self.power:
             self.plot_power()
@@ -75,6 +178,8 @@ class Graph:
             self.plot_efficiency()
         if self.kernel_percent_peak:
             self.plot_kernel_percent_peak()
+        if self.latency:
+            self.plot_latency()
 
 
             
@@ -131,6 +236,32 @@ class Graph:
         plt.savefig(f"{self.graph_name_for_file}_performance.png", dpi=400)
         plt.close()
 
+    def plot_latency(self, label=None, legend_title=None):
+        plt.clf()
+        show_label = label is not None and legend_title is not None
+        fig, ax1 = plt.subplots()
+        title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Latency', fontsize=16, wrap=True)
+        ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
+        ax1.set_ylabel('Latency (ms)', fontsize=14)
+        if self.y_max is not None:
+            plt.ylim(top=self.y_max['latency'])
+        if self.y_min is not None:
+            plt.ylim(bottom=self.y_min['latency'])
+        latency = self.means['latency'].to_numpy()
+        ax1.grid(True, alpha=0.4)
+        ax1.plot(self.x_axis_values, latency, marker='o', label=label)
+        for plot in self.additional_plots['latency']:
+            if plot["label"] is not None:
+                show_label = True
+            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"], marker=plot["marker"])
+        if show_label:
+            plt.legend(title=legend_title) 
+        fig.tight_layout()
+        plt.subplots_adjust(top=0.9)
+        title.set_y(1.05)
+        plt.savefig(f"{self.graph_name_for_file}_latency.png", dpi=400)
+        plt.close()
+
     def plot_efficiency(self, label=None, legend_title=None):
         plt.clf()
         show_label = label is not None and legend_title is not None
@@ -182,6 +313,7 @@ class Graph:
 
 
 
+
     def clear_normalization(self):
         self.y_max = None
         self.y_min = None
@@ -215,6 +347,12 @@ class Graph:
             y_axis = graph.means['mflops_w']
             if include_err:
                 err = graph.stds['mflops_w']
+            else:
+                err = None
+        if graph_type == 'latency':
+            y_axis = graph.means['latency']
+            if include_err:
+                err = graph.stds['latency']
             else:
                 err = None
         if graph_type == 'kernel_percent_peak':
@@ -251,6 +389,10 @@ def normalize_graphs(graphs):
             vals = g.means["mflops_w"]
             global_max["efficiency"] = max(global_max.get("efficiency", -float("inf")), vals.max())
             global_min["efficiency"] = min(global_min.get("efficiency", float("inf")), vals.min())
+        if g.latency:
+            vals = g.means["latency"]
+            global_max["latency"] = max(global_max.get("latency", -float("inf")), vals.max())
+            global_min["latency"] = min(global_min.get("latency", float("inf")), vals.min())
 
     for g in graphs:
         g.y_max = global_max

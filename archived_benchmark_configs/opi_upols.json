@@ -1,0 +1,114 @@
+{
+  "host": {
+    "wattsup_com_port": "COM3",
+    "sample_interval_sec": 1.0,
+    "log_root": "/home/etower/Documents/benchmark_orchestrator/bench_logs/upols_stream_tests"
+  },
+  "dut": {
+    "hostname": "pharaoh.local",
+    "username": "dev",
+    "backup_ip": "192.168.44.8",
+    "root_access": true,
+    "build_dir": "/home/dev/Local_Code/edgedevice-fft/build",
+    "config_txt": "/boot/firmware/config.txt",
+    "comm_file": "/tmp/ready"
+  },
+  "stability": {
+    "window_size": 20,
+    "required_consecutive_windows": 3,
+    "max_range_watts": 0.201,
+    "max_step_delta_watts": 0.101
+  },
+  "retry": {
+    "max_attempts": 8,
+    "cooldown_sec": 120,
+    "ssh_wait_timeout_sec": 300
+  },
+  "tests": [
+    {
+      "name": "fftw_upols_vs_A55_freq_powersave_16_banks",
+      "executable": "taskset -c 0-3 nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy4_freq": 408000,
+        "policy6_freq": 408000,
+        "gpu_freq": 300000000
+      },
+      "sweep": {
+        "var": "policy0_freq",
+        "values": [408000, 600000, 816000, 1008000, 1200000, 1416000, 1608000, 1800000]
+      },
+      "total_iterations": 4,
+      "tag_fields": ["policy0_freq", "policy4_freq", "policy6_freq", "gpu_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ffrw_upols_vs_A55_freq_performance_16_banks",
+      "executable": "taskset -c 0-3 nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
+      "governor": "performance",
+      "fixed_config": {
+        "policy4_freq": 408000,
+        "policy6_freq": 408000,
+        "gpu_freq": 300000000
+      },
+      "sweep": {
+        "var": "policy0_freq",
+        "values": [408000, 600000, 816000, 1008000, 1200000, 1416000, 1608000, 1800000]
+      },
+      "total_iterations": 4,
+      "tag_fields": ["policy0_freq", "policy4_freq", "policy6_freq", "gpu_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "fftw_upols_vs_A76_freq_powersave_16_banks",
+      "executable": "taskset -c 4,5 nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy6_freq": 408000,
+        "gpu_freq": 300000000
+      },
+      "sweep": {
+        "var": "policy4_freq",
+        "values": [408000, 600000, 816000, 1008000, 1200000, 1416000, 1608000, 1800000, 2016000, 2208000, 2256000]
+      },
+      "total_iterations": 4,
+      "tag_fields": ["policy0_freq", "policy4_freq", "policy6_freq", "gpu_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ffrw_upols_vs_A76_freq_performance_16_banks",
+      "executable": "taskset -c 4,5 nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
+      "governor": "performance",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy6_freq": 408000,
+        "gpu_freq": 300000000
+      },
+      "sweep": {
+        "var": "policy4_freq",
+        "values": [408000, 600000, 816000, 1008000, 1200000, 1416000, 1608000, 1800000, 2016000, 2208000, 2256000]
+      },
+      "total_iterations": 4,
+      "tag_fields": ["policy0_freq", "policy4_freq", "policy6_freq", "gpu_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "clfft_upols_vs_gpu_freq_16_banks",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -p clvk -b 16",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy4_freq": 408000,
+        "policy6_freq": 408000
+      },
+      "sweep": {
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
+      },
+      "total_iterations": 4,
+      "tag_fields": ["policy0_freq", "policy4_freq", "policy6_freq", "gpu_freq"],
+      "max_runtime_sec": 600
+    }
+  ]
+}
