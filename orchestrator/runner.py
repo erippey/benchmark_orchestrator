@@ -61,7 +61,7 @@ class BenchmarkRunner:
                 
 
 
-    def measure_idle(self, writer, seconds=60):
+    def measure_idle(self, writer, seconds=15):
 
         for _ in range(seconds):
 
@@ -108,7 +108,7 @@ class BenchmarkRunner:
 
                 while attempt <= self.cfg["retry"]["max_attempts"]:
 
-                    print("Running", test["name"], tag, "attempt", attempt)
+                    print("Running", test["name"], tag, "iteration", iteration, "attempt", attempt)
                     
                     self.device_manager.save_metadata(test, run_dir, self.date)
 
@@ -134,8 +134,6 @@ class BenchmarkRunner:
 
                         f.close()
 
-                        print(f"Idle power measurements finished, running {test['executable']}")
-
                         # remove trigger file
                         self.client.run(f"rm -f {comm_file}", as_root=does_device_need_root, safe_to_retry=False)
 
@@ -147,13 +145,15 @@ class BenchmarkRunner:
 
                         self.client.run(f"mkdir -p {remote_log_dir}")
 
-                        args = f"--log_dir {remote_log_dir} --comm_file {comm_file}"
+                        args = f"--log-dir {remote_log_dir} --comm-file {comm_file}"
+
+                        print(f"Idle power measurements finished, running {test['executable']} {args}")
 
                         # start benchmark in background
                         cmd = (
                             f"(cd {build} && "
                             f"setsid nohup {exe} {args} "
-                            f"> {remote_log_dir}/stdout_dump.txt 2>&1 "
+                            f"> {remote_log_dir}/stdout.txt 2>&1 "
                             f"< /dev/null & "
                             f"echo $! > {remote_log_dir}/run.pid)"
                         )

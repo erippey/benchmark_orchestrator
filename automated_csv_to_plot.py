@@ -76,12 +76,12 @@ class Graph:
 
         self.csv["mflops_w"] = self.csv["mflops"] / self.csv["run_power_w"]
 
-
-        for kernel, column_name, ops in self.kernel_names_and_ops:
-            runtime_s = self.csv[kernel] / 1000
-            mflops = (ops / runtime_s) / 1e6
-            col = f"{column_name}_percent_peak"
-            self.csv[col] = (mflops / self.peak_mflops) * 100
+        if self.kernel_names_and_ops is not None:
+            for kernel, column_name, ops in self.kernel_names_and_ops:
+                runtime_s = self.csv[kernel] / 1000
+                mflops = (ops / runtime_s) / 1e6
+                col = f"{column_name}_percent_peak"
+                self.csv[col] = (mflops / self.peak_mflops) * 100
 
         self.grouped = self.csv.groupby(self.independent_variable)
 
