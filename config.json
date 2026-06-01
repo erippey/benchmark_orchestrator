@@ -1,15 +1,15 @@
 {
   "host": {
-    "wattsup_com_port": "COM3",
+    "wattsup_com_port": "/dev/ttyUSB0",
     "sample_interval_sec": 1.0,
-    "log_root": "C:/Users/erippey3/Documents/benchmark_orchestrator/bench_logs/upols_stream_tests"
+    "log_root": "/home/erippey3-laptop/Documents/benchmark_orchestrator/bench_logs/SRAD"
   },
   "dut": {
-    "hostname": "acrobat.home.arpa",
+    "hostname": "pharaoh.local",
     "username": "dev",
-    "backup_ip": "192.1p",
+    "backup_ip": "192.168.44.8",
     "root_access": true,
-    "build_dir": "/home/ritvik/edgedevice-fft/build",
+    "build_dir": "/home/dev/rodinia_3.1/opencl/srad",
     "config_txt": "/boot/firmware/config.txt",
     "comm_file": "/tmp/ready"
   },
@@ -26,49 +26,188 @@
   },
   "tests": [
     {
-      "name": "fftw_upols_vs_arm_freq_powersave_16_banks_no_warmup",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
+      "name": "SRAD_opencl_vs_GPU_freq_A76_408",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
       "governor": "powersave",
       "fixed_config": {
-        "v3d_freq_min": 500,
-        "core_freq_min": 500
+        "policy0_freq": 408000,
+        "policy4_freq": 408000,
+        "policy6_freq": 408000
       },
       "sweep": {
-        "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
       },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
       "max_runtime_sec": 600
     },
     {
-      "name": "fftw_upols_vs_arm_freq_performance_16_banks_no_warmup",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be fftw-upols -b 16",
-      "governor": "performance",
+      "name": "SRAD_opencl_vs_GPU_freq_A76_600",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
+      "governor": "powersave",
       "fixed_config": {
+        "policy0_freq": 408000,
+        "policy4_freq": 600000,
+        "policy6_freq": 408000
       },
       "sweep": {
-        "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
       },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq"],
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
+      "max_runtime_sec": 600
+    },
+     {
+      "name": "SRAD_opencl_vs_GPU_freq_A76_816",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy4_freq": 816000,
+        "policy6_freq": 408000
+      },
+      "sweep": {
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
       "max_runtime_sec": 600
     },
     {
-      "name": "clfft_upols_vs_v3d_freq_16_banks_no_warmup",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -p clvk -b 16",
+      "name": "SRAD_opencl_vs_GPU_freq_A76_1008",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
       "governor": "powersave",
       "fixed_config": {
-        "arm_freq_min": 1500,
-        "core_freq_min": 500
+        "policy0_freq": 408000,
+        "policy4_freq": 1008000,
+        "policy6_freq": 408000
       },
       "sweep": {
-        "var": "v3d_freq_min",
-        "values": [500, 550, 600, 650, 700, 750, 800, 850, 900, 960]
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
       },
-      "total_iterations": 9,
-      "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
+      "max_runtime_sec": 600
+    },{
+      "name": "SRAD_opencl_vs_GPU_freq_A76_1200",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy4_freq": 1200000,
+        "policy6_freq": 408000
+      },
+      "sweep": {
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "SRAD_opencl_vs_GPU_freq_A76_1416",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy4_freq": 1416000,
+        "policy6_freq": 408000
+      },
+      "sweep": {
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
+      "max_runtime_sec": 600
+    },
+        {
+      "name": "SRAD_opencl_vs_GPU_freq_A76_1608",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy4_freq": 1608000,
+        "policy6_freq": 408000
+      },
+      "sweep": {
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "SRAD_opencl_vs_GPU_freq_A76_1800",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy4_freq": 1800000,
+        "policy6_freq": 408000
+      },
+      "sweep": {
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
+      "max_runtime_sec": 600
+    },
+     {
+      "name": "SRAD_opencl_vs_GPU_freq_A76_2106",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy4_freq": 2106000,
+        "policy6_freq": 408000
+      },
+      "sweep": {
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "SRAD_opencl_vs_GPU_freq_A76_2208",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy4_freq": 2208000,
+        "policy6_freq": 408000
+      },
+      "sweep": {
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
+      "max_runtime_sec": 600
+    },{
+      "name": "SRAD_opencl_vs_GPU_freq_A76_2256",
+      "executable": "taskset -c 4,5 nice -20 ./srad -i 300  -l 0.5 -r 4016 -c 3664",
+      "governor": "powersave",
+      "fixed_config": {
+        "policy0_freq": 408000,
+        "policy4_freq": 2256000,
+        "policy6_freq": 408000
+      },
+      "sweep": {
+        "var": "gpu_freq",
+        "values": [300000000, 400000000, 500000000, 600000000, 700000000, 800000000, 900000000, 1000000000]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["gpu_freq", "policy4_freq"],
       "max_runtime_sec": 600
     }
   ]

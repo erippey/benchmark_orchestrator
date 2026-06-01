@@ -16,7 +16,8 @@ class Graph:
                  drop_lowest_n=0, drop_highest_n=0,
                  drop_by="total_exec_ms",
                  outlier_group_cols=None,
-                 min_runs_after_drop=2):
+                 min_runs_after_drop=2,
+                 opp=None):
 
         self.csv_path = csv_path
         self.csv = pd.read_csv(csv_path)
@@ -42,6 +43,8 @@ class Graph:
         self.independent_variable = independent_variable["var_name"]
         self.independent_variable_proper = independent_variable["proper_name"]
 
+        self.opp = opp
+
         # Keep a copy of the filtered-but-untrimmed data.
         self.csv_untrimmed = self.csv.copy()
         self.dropped_outlier_rows = pd.DataFrame()
@@ -65,17 +68,15 @@ class Graph:
                 )
             )
 
-        if self.performance or self.efficiency:
-            runtime_s = self.csv["total_exec_ms"] / 1000
-            self.csv["mflops"] = (total_ops / runtime_s) / 1e6
+        runtime_s = self.csv["total_exec_ms"] / 1000
+        self.csv["mflops"] = (total_ops / runtime_s) / 1e6
 
-        if self.latency:
-            self.csv["latency"] = self.csv["conv_avg_ms"]
+        self.csv["latency"] = self.csv["conv_avg_ms"]
 
-        if self.efficiency:
-            self.csv["mflops_w"] = self.csv["mflops"] / self.csv["run_power_w"]
 
-        if self.kernel_percent_peak:
+        self.csv["mflops_w"] = self.csv["mflops"] / self.csv["run_power_w"]
+
+        if self.kernel_names_and_ops is not None:
             for kernel, column_name, ops in self.kernel_names_and_ops:
                 runtime_s = self.csv[kernel] / 1000
                 mflops = (ops / runtime_s) / 1e6
@@ -87,6 +88,15 @@ class Graph:
         self.means = self.grouped.mean(numeric_only=True)
         self.stds = self.grouped.std(numeric_only=True)
         self.x_axis_values = self.means.index.to_numpy()
+
+        if self.opp is not None:
+            self.means["estimate_rt"] = [self.estimate_execution_time(i) for i in self.means.index]
+            self.means["estimate_perf"] = (total_ops / (self.means["estimate_rt"] / 1000)) / 1e6
+            print(f"Actual ac values for {test_name}: ")
+            self.means["estimate_pd"] = [self.estimate_power_draw(i) for i in self.means.index]
+            print("")
+            self.means["estimate_eff"] = self.means["estimate_perf"] / self.means["estimate_pd"]
+
 
         self.y_max = None
         self.y_min = None
@@ -169,21 +179,22 @@ class Graph:
         summary_df = pd.DataFrame(summary_rows)
 
         return trimmed, dropped, summary_df
-    def plot(self, label=None):
+    
+    def plot(self, label=None, show_estimate=False):
+        self.plot_runtime(show_estimate=show_estimate)
         if self.power:
-            self.plot_power()
+            self.plot_power(show_estimate=show_estimate)
         if self.performance:
-            self.plot_performance()
+            self.plot_performance(show_estimate=show_estimate)
         if self.efficiency:
-            self.plot_efficiency()
+            self.plot_efficiency(show_estimate=show_estimate)
         if self.kernel_percent_peak:
             self.plot_kernel_percent_peak()
         if self.latency:
             self.plot_latency()
 
-
             
-    def plot_power(self, label=None, legend_title=None):
+    def plot_power(self, label=None, legend_title=None, show_estimate=False):
         plt.clf()
         show_label = label is not None and legend_title is not None
         fig, ax1 = plt.subplots()
@@ -198,6 +209,8 @@ class Graph:
         power_err = self.stds['run_power_w'].to_numpy()
         ax1.grid(True, alpha=0.4)
         plt.errorbar(self.x_axis_values, power, yerr=power_err, marker='o', capsize=4, label=label)
+        if (show_estimate):
+            plt.errorbar(self.x_axis_values, self.means["estimate_pd"], color="black", label="Estimated Power Draw")
         for plot in self.additional_plots['power']:
             if plot["label"] is not None:
                 show_label = True
@@ -210,7 +223,36 @@ class Graph:
         plt.savefig(f"{self.graph_name_for_file}_power.png", dpi=400)
         plt.close()
 
-    def plot_performance(self, label=None, legend_title=None):
+    def plot_runtime(self, label=None, legend_title=None, show_estimate=False):
+        plt.clf()
+        show_label = label is not None and legend_title is not None
+        fig, ax1 = plt.subplots()
+        title = plt.title(f'{self.graph_name}: {self.independent_variable_proper} V Runtime', fontsize=16, wrap=True)
+        ax1.set_xlabel(f'{self.independent_variable_proper}', fontsize=14)
+        ax1.set_ylabel('Runtime (ms)', fontsize=14)
+        if self.y_max is not None:
+            plt.ylim(top=self.y_max['runtime'])
+        if self.y_min is not None:
+            plt.ylim(bottom=self.y_min['runtime'])
+        performance = self.means['total_exec_ms'].to_numpy()
+        ax1.grid(True, alpha=0.4)
+        ax1.plot(self.x_axis_values, performance, marker='o', label=label)
+        
+        if (show_estimate):
+            plt.errorbar(self.x_axis_values, self.means["estimate_rt"], color="black", label="Estimated Runtime")
+        for plot in self.additional_plots['performance']:
+            if plot["label"] is not None:
+                show_label = True
+            plt.errorbar(plot["x_axis"], plot["y_axis"], yerr=plot["err"], color=plot["color"], label=plot["label"], marker=plot["marker"])
+        if show_label:
+            plt.legend(title=legend_title)
+        fig.tight_layout()
+        plt.subplots_adjust(top=0.9)
+        title.set_y(1.05)
+        plt.savefig(f"{self.graph_name_for_file}_runtime.png", dpi=400)
+        plt.close()
+
+    def plot_performance(self, label=None, legend_title=None, show_estimate=False):
         plt.clf()
         show_label = label is not None and legend_title is not None
         fig, ax1 = plt.subplots()
@@ -224,6 +266,9 @@ class Graph:
         performance = self.means['mflops'].to_numpy()
         ax1.grid(True, alpha=0.4)
         ax1.plot(self.x_axis_values, performance, marker='o', label=label)
+        
+        if (show_estimate):
+            plt.errorbar(self.x_axis_values, self.means["estimate_perf"], color="black", label="Estimated Performance")
         for plot in self.additional_plots['performance']:
             if plot["label"] is not None:
                 show_label = True
@@ -262,7 +307,7 @@ class Graph:
         plt.savefig(f"{self.graph_name_for_file}_latency.png", dpi=400)
         plt.close()
 
-    def plot_efficiency(self, label=None, legend_title=None):
+    def plot_efficiency(self, label=None, legend_title=None, show_estimate=False):
         plt.clf()
         show_label = label is not None and legend_title is not None
         fig, ax1 = plt.subplots()
@@ -276,6 +321,7 @@ class Graph:
         efficiency = self.means['mflops_w'].to_numpy()
         ax1.grid(True, alpha=0.4)
         ax1.plot(self.x_axis_values, efficiency, marker='o', label=label)
+        plt.errorbar(self.x_axis_values, self.means["estimate_eff"], color="black", label="Estimated Efficiency")
         for plot in self.additional_plots['efficiency']:
             if plot["label"] is not None:
                 show_label = True
@@ -309,8 +355,6 @@ class Graph:
         title.set_y(1.05)
         plt.savefig(f"{self.graph_name_for_file}_kernel_percent_peak.png", dpi=400)
         plt.close()
-
-
 
 
 
@@ -368,12 +412,236 @@ class Graph:
             "marker": marker
         })
     
+
+
+
+    def _require_mean_column(self, column_name):
+        if column_name not in self.means.columns:
+            raise KeyError(
+                f"Column {column_name!r} is required, but it is not present in self.means. "
+                f"Available columns: {list(self.means.columns)}"
+            )
+
+
+    def _get_min_max_independent_values(self):
+        if len(self.means.index) < 2:
+            raise ValueError(
+                "At least two independent-variable values are required for endpoint estimation."
+            )
+
+        try:
+            x_values = self.means.index.to_numpy(dtype=float)
+        except ValueError as exc:
+            raise TypeError(
+                f"Independent variable {self.independent_variable!r} must be numeric "
+                "for frequency-based estimation."
+            ) from exc
+
+        min_pos = x_values.argmin()
+        max_pos = x_values.argmax()
+
+        min_key = self.means.index[min_pos]
+        max_key = self.means.index[max_pos]
+
+        min_freq = float(x_values[min_pos])
+        max_freq = float(x_values[max_pos])
+
+        if min_freq <= 0 or max_freq <= 0:
+            raise ValueError("Frequencies must be positive.")
+
+        if min_freq == max_freq:
+            raise ValueError("Minimum and maximum frequencies are identical.")
+
+        return min_key, max_key, min_freq, max_freq
+
+
+    def _lookup_voltage(self, opp, freq):
+        """
+        Look up voltage for a frequency.
+
+        This allows small int/float representation differences, e.g.
+        600000000 vs 600000000.0.
+        """
+        if freq in opp:
+            return float(opp[freq])
+
+        freq_f = float(freq)
+
+        for key, voltage in opp.items():
+            try:
+                key_f = float(key)
+            except (TypeError, ValueError):
+                continue
+
+            if key_f == freq_f:
+                return float(voltage)
+
+        raise KeyError(
+            f"Frequency {freq!r} was not found in the OPP table. "
+            f"Available frequencies: {sorted(opp.keys())}"
+        )
+
+
+    def _lookup_mean_row_key(self, freq):
+        """
+        Find the matching self.means index key for a requested frequency.
+
+        This is used because the grouped index may contain ints, floats,
+        numpy scalar types, etc.
+        """
+        if freq in self.means.index:
+            return freq
+
+        freq_f = float(freq)
+
+        for key in self.means.index:
+            try:
+                key_f = float(key)
+            except (TypeError, ValueError):
+                continue
+
+            if key_f == freq_f:
+                return key
+
+        raise KeyError(
+            f"Frequency {freq!r} was not found in measured data for "
+            f"{self.independent_variable!r}. Available values: {list(self.means.index)}"
+        )
+
+
+    def estimate_execution_time(self, freq):
+        """
+        Estimate total execution time using a two-point inverse-frequency model:
+
+            time_ms = a / freq + b
+
+        The model is fit using the minimum and maximum measured independent-variable
+        frequencies.
+        """
+        self._require_mean_column("total_exec_ms")
+
+        min_key, max_key, min_freq, max_freq = self._get_min_max_independent_values()
+
+        min_time_ms = float(self.means.loc[min_key, "total_exec_ms"])
+        max_time_ms = float(self.means.loc[max_key, "total_exec_ms"])
+
+        # Solve:
+        #   min_time = a / min_freq + b
+        #   max_time = a / max_freq + b
+        denom = (1.0 / min_freq) - (1.0 / max_freq)
+
+        if denom == 0:
+            raise ValueError("Could not fit inverse-frequency model because denominator is zero.")
+
+        a = (min_time_ms - max_time_ms) / denom
+        b = min_time_ms - (a / min_freq)
+
+        freq_f = float(freq)
+
+        if freq_f <= 0:
+            raise ValueError("freq must be positive.")
+
+        return (a / freq_f) + b
+
+
+    def estimate_power_draw(self, freq, opp=None):
+        """
+        Estimate run power using:
+
+            power_w = Ac * V^2 * freq + idle_power_w
+
+        Ac is estimated at the minimum and maximum measured frequencies using:
+
+            Ac = (run_power_w - idle_power_w) / (V^2 * freq)
+
+        Then the two Ac values are averaged.
+
+        Requirements:
+        - OPP table must contain min frequency, max frequency, and requested freq.
+        - measured data must contain idle_power_w for requested freq.
+        - measured data must contain run_power_w and idle_power_w for min/max freq.
+        """
+        if opp is None:
+            opp = getattr(self, "opp", None)
+
+        if opp is None:
+            raise ValueError(
+                "No OPP table was provided. Pass opp=... to estimate_power_draw(), "
+                "or set self.opp when constructing the Graph."
+            )
+
+        self._require_mean_column("run_power_w")
+        self._require_mean_column("idle_power_w")
+
+        min_key, max_key, min_freq, max_freq = self._get_min_max_independent_values()
+
+        min_voltage = self._lookup_voltage(opp, min_freq)
+        max_voltage = self._lookup_voltage(opp, max_freq)
+
+        min_run_power = float(self.means.loc[min_key, "run_power_w"])
+        max_run_power = float(self.means.loc[max_key, "run_power_w"])
+
+        idle_power = float(self.means["idle_power_w"].mean())
+        min_idle_power = float(self.means.loc[min_key, "idle_power_w"])
+        max_idle_power = float(self.means.loc[max_key, "idle_power_w"])
+
+        min_dynamic_power = min_run_power - idle_power
+        max_dynamic_power = max_run_power - idle_power
+
+        voltage_range = max_freq - min_freq
+        voltage_weight = (max_freq - freq) / voltage_range
+
+        if (voltage_weight > 1) or (voltage_weight < 0):
+            raise ValueError(
+                "frequency should be between minimum and maximum frequencies"
+            )
+
+        if min_dynamic_power < 0 or max_dynamic_power < 0:
+            raise ValueError(
+                "Measured run_power_w is below idle_power_w at one of the endpoints. "
+                "Cannot estimate a valid positive dynamic-power coefficient."
+            )
+
+        min_den = (min_voltage ** 2) * min_freq
+        max_den = (max_voltage ** 2) * max_freq
+
+        if min_den == 0 or max_den == 0:
+            raise ValueError("Voltage and frequency must be nonzero for power estimation.")
+
+        ac_min = min_dynamic_power / min_den
+        ac_max = max_dynamic_power / max_den
+
+        ac_avg = (ac_min + ac_max) / 2.0
+        estimate_ac = ac_min * voltage_weight + ac_max * (1 - voltage_weight)
+
+        freq_key = self._lookup_mean_row_key(freq)
+        freq_f = float(freq)
+        voltage = self._lookup_voltage(opp, freq_f)
+
+        
+        actual_power = float(self.means.loc[freq, "run_power_w"])
+        cur_dynamic_power = actual_power - idle_power
+        actual_den = (voltage ** 2) * freq
+        actual_ac = cur_dynamic_power / actual_den
+        print(f"({actual_ac}, {estimate_ac}), ", end="")
+        
+
+        # idle_power = float(self.means.loc[freq_key, "idle_power_w"])
+
+        return estimate_ac * (voltage ** 2) * freq_f + idle_power
+    
+
+
 def normalize_graphs(graphs):
 
     global_max = {}
     global_min = {}
 
     for g in graphs:
+
+        vals = g.means["total_exec_ms"]
+        global_max["runtime"] = max(global_max.get("rintime", -float("inf")), vals.max())
+        global_min["runtime"] = min(global_max.get("rintime", -float("inf")), vals.min())
 
         if g.power:
             vals = g.means["run_power_w"]
@@ -397,95 +665,3 @@ def normalize_graphs(graphs):
     for g in graphs:
         g.y_max = global_max
         g.y_min = global_min
-
-
-
-    
-if __name__ == "__main__":
-    independent_variable = {
-        "var_name": "v3d_freq_min",
-        "proper_name": "GPU Frequency (MHz)"
-    }
-    kernel_names_and_ops = {
-        ("Forward FFT Execution Time", "forward", 36700160),
-        ("Complex Multiply Execution Time", "complex_multiply", 3145728),
-        ("Inverse FFT Execution Time", "inverse", 36700160)
-    }
-    clvk_graph = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using clvk\N{RIGHTWARDS ARROW}GPU", 
-                   test_name="clvk_arm_freq_powersave", graph_name_for_file="graphs/clvk_powersave", kernel_names_and_ops=kernel_names_and_ops, 
-                   total_ops=76646414974, peak_mflops=5270)
-    
-    independent_variable = {
-        "var_name": "arm_freq_min",
-        "proper_name": "CPU Frequency (MHz)"
-    }
-
-    kernel_names_and_ops = {
-        ("Forward FFT Execution Time", "forward", 1146880),
-        ("Complex Multiply Execution Time", "complex_multiply", 98304),
-        ("Inverse FFT Execution Time", "inverse", 1146880),
-        ("Overlap Add", "overlap_add", 16384)
-    }
-
-    fftw_graph_ps = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using FFTW\N{RIGHTWARDS ARROW}CPU", 
-                   test_name="FFTW_arm_freq_powersave", graph_name_for_file="graphs/fftw_powersave", kernel_names_and_ops=kernel_names_and_ops, 
-                   total_ops=76646414974, peak_mflops=38374)
-
-    independent_variable = {
-        "var_name": "arm_freq",
-        "proper_name": "CPU Frequency (MHz)"
-    }
-    
-    fftw_graph_pf = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using FFTW\N{RIGHTWARDS ARROW}CPU", 
-                   test_name="FFTW_arm_freq_performance", graph_name_for_file="graphs/fftw_performance", kernel_names_and_ops=kernel_names_and_ops, 
-                   total_ops=76646414974, peak_mflops=38374)
-    
-    independent_variable = {
-        "var_name": "arm_freq_min",
-        "proper_name": "CPU Frequency (MHz)"
-    }
-
-    kernel_names_and_ops = {
-        ("Forward FFT Execution Time", "forward", 4587520),
-        ("Complex Multiply Execution Time", "complex_multiply", 393216),
-        ("Inverse FFT Execution Time", "inverse", 4587520),
-        ("Overlap Add", "overlap_add", 65536)
-    }
-
-    pocl_graph_ps = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using PoCL\N{RIGHTWARDS ARROW}CPU", 
-                   test_name="PoCL_arm_freq_powersave", graph_name_for_file="graphs/pocl_powersave", kernel_names_and_ops=kernel_names_and_ops, 
-                   total_ops=76646414974, peak_mflops=38374)
-    
-    
-    independent_variable = {
-        "var_name": "arm_freq",
-        "proper_name": "CPU Frequency (MHz)"
-    }
-
-    pocl_graph_pf = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using PoCL\N{RIGHTWARDS ARROW}CPU", 
-                   test_name="PoCL_arm_freq_performance", graph_name_for_file="graphs/pocl_performance", kernel_names_and_ops=kernel_names_and_ops, 
-                   total_ops=76646414974, peak_mflops=38374)
-
-    
-    normalize_graphs([clvk_graph, fftw_graph_pf, fftw_graph_ps, pocl_graph_ps, pocl_graph_pf])
-
-    clvk_graph.plot()
-    fftw_graph_pf.plot()
-    fftw_graph_ps.plot()
-    pocl_graph_ps.plot()
-
-    fftw_graph_ps.add_graph_plot(fftw_graph_pf, "power", include_err=True, color="salmon", label="Performance", marker="o")
-    fftw_graph_ps.add_graph_plot(fftw_graph_pf, "efficiency", include_err=True, color="salmon", label="Performance", marker="o")
-    fftw_graph_ps.add_graph_plot(fftw_graph_pf, "performance", color="salmon", label="Performance", marker="o" )
-    fftw_graph_ps.plot_power(label="powersave", legend_title="Governor")
-    fftw_graph_ps.plot_efficiency(label="powersave", legend_title="Governor")
-    fftw_graph_ps.plot_performance(label="powersave", legend_title="Governor")
-    
-
-    pocl_graph_ps.add_graph_plot(pocl_graph_pf, "power", include_err=True, color="salmon", label="Performance", marker="o")
-    pocl_graph_ps.add_graph_plot(pocl_graph_pf, "efficiency", include_err=True, color="salmon", label="Performance", marker="o")
-    pocl_graph_ps.add_graph_plot(pocl_graph_pf, "performance", color="salmon", label="Performance", marker="o" )
-    pocl_graph_ps.plot_power(label="powersave", legend_title="Governor")
-    pocl_graph_ps.plot_efficiency(label="powersave", legend_title="Governor")
-    pocl_graph_ps.plot_performance(label="powersave", legend_title="Governor")
-    

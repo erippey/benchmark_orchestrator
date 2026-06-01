@@ -375,11 +375,18 @@ if __name__ == "__main__":
         "Forward FFT Execution Time",
         "Multiply Accumulate Execution Time",
         "Inverse FFT Execution Time",
+        "Extract Kernel",
+        "Prepare Kernel",
+        "Reduce Kernel",
+        "SRAD Kernel 1",
+        "SRAD Kernel 2",
+        "Compress Kernel",
+        "Full Iteration"
     ]
 
 
 
-    agg = BenchmarkAggregator("bench_logs/upols_stream_tests", ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
+    agg = BenchmarkAggregator("bench_logs/", ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
 
     agg.aggregate()
 
