@@ -1,6 +1,7 @@
 from automated_csv_to_plot import *
 
 if __name__ == "__main__":
+    
     independent_variable = {
         "var_name": "v3d_freq_min",
         "proper_name": "GPU Frequency (MHz)"
@@ -66,25 +67,25 @@ if __name__ == "__main__":
                    total_ops=76646414974, peak_mflops=38374)
 
     
-    normalize_graphs([clvk_graph, fftw_graph_pf, fftw_graph_ps, pocl_graph_ps, pocl_graph_pf])
+    #normalize_graphs([clvk_graph, fftw_graph_pf, fftw_graph_ps, pocl_graph_ps, pocl_graph_pf])
 
     clvk_graph.plot()
     fftw_graph_pf.plot()
     fftw_graph_ps.plot()
     pocl_graph_ps.plot()
 
-    fftw_graph_ps.add_graph_plot(fftw_graph_pf, "power", include_err=True, color="salmon", label="Performance", marker="o")
-    fftw_graph_ps.add_graph_plot(fftw_graph_pf, "efficiency", include_err=True, color="salmon", label="Performance", marker="o")
-    fftw_graph_ps.add_graph_plot(fftw_graph_pf, "performance", color="salmon", label="Performance", marker="o" )
-    fftw_graph_ps.plot_power(label="powersave", legend_title="Governor")
-    fftw_graph_ps.plot_efficiency(label="powersave", legend_title="Governor")
-    fftw_graph_ps.plot_performance(label="powersave", legend_title="Governor")
+    # fftw_graph_ps.add_graph_plot(fftw_graph_pf, "power", include_err=True, color="salmon", label="Performance", marker="o")
+    # fftw_graph_ps.add_graph_plot(fftw_graph_pf, "efficiency", include_err=True, color="salmon", label="Performance", marker="o")
+    # fftw_graph_ps.add_graph_plot(fftw_graph_pf, "performance", color="salmon", label="Performance", marker="o" )
+    # fftw_graph_ps.plot_power(label="powersave", legend_title="Governor")
+    # fftw_graph_ps.plot_efficiency(label="powersave", legend_title="Governor")
+    # fftw_graph_ps.plot_performance(label="powersave", legend_title="Governor")
     
 
-    pocl_graph_ps.add_graph_plot(pocl_graph_pf, "power", include_err=True, color="salmon", label="Performance", marker="o")
-    pocl_graph_ps.add_graph_plot(pocl_graph_pf, "efficiency", include_err=True, color="salmon", label="Performance", marker="o")
-    pocl_graph_ps.add_graph_plot(pocl_graph_pf, "performance", color="salmon", label="Performance", marker="o" )
-    pocl_graph_ps.plot_power(label="powersave", legend_title="Governor")
-    pocl_graph_ps.plot_efficiency(label="powersave", legend_title="Governor")
-    pocl_graph_ps.plot_performance(label="powersave", legend_title="Governor")
+    # pocl_graph_ps.add_graph_plot(pocl_graph_pf, "power", include_err=True, color="salmon", label="Performance", marker="o")
+    # pocl_graph_ps.add_graph_plot(pocl_graph_pf, "efficiency", include_err=True, color="salmon", label="Performance", marker="o")
+    # pocl_graph_ps.add_graph_plot(pocl_graph_pf, "performance", color="salmon", label="Performance", marker="o" )
+    # pocl_graph_ps.plot_power(label="powersave", legend_title="Governor")
+    # pocl_graph_ps.plot_efficiency(label="powersave", legend_title="Governor")
+    # pocl_graph_ps.plot_performance(label="powersave", legend_title="Governor")
     
