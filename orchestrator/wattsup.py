@@ -50,3 +50,12 @@ class WattsUpMeter:
                 amps=amps,
                 raw=line,
             )
+        
+    def close(self):
+        if hasattr(self, "meter") and self.meter is not None:
+            self.meter.close()
+            self.meter = None
+
+        if hasattr(self, "manager") and self.manager is not None:
+            if hasattr(self.manager, "close"):
+                self.manager.close()

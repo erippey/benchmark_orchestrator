@@ -48,6 +48,11 @@ class BenchmarkRunner:
         self.device_manager = device_manager
         self.device_manager.set_ssh_client(self.client)
 
+    def close(self):
+        self.meter.close()
+
+        self.client.close()
+
     def wait_for_idle(self):
 
         self.stability.clear()
@@ -164,6 +169,8 @@ class BenchmarkRunner:
                         pid = pid.strip()
                         if not pid:
                             raise Exception("Failed to capture benchmark PID")
+                        
+                        self.device_manager.save_runtime_metadata(test, run_dir, self.date)
 
                         # wait for warmup stabilization
                         print("waiting for executable to reach stable power draw...")
