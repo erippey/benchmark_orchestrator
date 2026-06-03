@@ -9,7 +9,7 @@
     "username": "dev",
     "backup_ip": "10.10.1.2",
     "root_access": true,
-    "build_dir": "/home/dev/Personal-Rodinia/openmp/kmeans/kmeans_serial",
+    "build_dir": "/home/dev/Personal-Rodinia/opencl/fft",
     "config_txt": "/boot/firmware/config.txt",
     "comm_file": "/tmp/ready"
   },
@@ -26,23 +26,23 @@
   },
   "tests": [
     {
-      "name": "KMeans-OpenMP-PI-t1-big",
-      "executable": "nice -20 ./kmeans -f ../../../data/kmeans/819200.txt -i 4",
+      "name": "FFT-OpenCL-PI-32k",
+      "executable": "nice -20 ./fft -p 15 -i 30000",
       "governor": "performance",
       "fixed_config": {
-        "v3d_freq": 500,
-        "v3d_freq_min": 500,
-        "core_freq": 910,
-        "core_freq_min": 910,
+        "core_freq": 960,
+        "core_freq_min": 960,
+        "arm_freq": 2400,
+        "arm_freq_min": 2400,
         "sdram_freq": 4267,
         "sdram_freq_min": 4267
       },
       "sweep": {
-        "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+        "var": "v3d_freq",
+        "values": [500, 550, 600, 650, 700, 750, 800, 850, 900, 960]
       },
       "total_iterations": 6,
-      "tag_fields": ["arm_freq"],
+      "tag_fields": ["v3d_freq"],
       "max_runtime_sec": 600
     }
   ]

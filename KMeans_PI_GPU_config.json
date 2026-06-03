@@ -26,8 +26,8 @@
   },
   "tests": [
     {
-      "name": "KMeams-OpenCL-RPI",
-      "executable": "nice -20 ./kmeans -o false -f ../../data/kmeans/kdd_cup -i 5",
+      "name": "KMeams-OpenCL-RPI-big",
+      "executable": "nice -20 ./kmeans -o false -f ../../data/kmeans/819200.txt -i 4",
       "governor": "performance",
       "fixed_config": {
         "core_freq": 960,

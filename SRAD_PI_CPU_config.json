@@ -26,8 +26,8 @@
   },
   "tests": [
     {
-      "name": "SRAD-OpenMP-PI-t4",
-      "executable": "nice -20 ./srad -i 50 -l 0.5 -r 4016 -c 3664 -t 4",
+      "name": "SRAD-OpenMP-PI-t4-small",
+      "executable": "nice -20 ./srad -i 150 -l 0.5 -r 2008 -c 1832 -t 4",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
@@ -46,8 +46,8 @@
       "max_runtime_sec": 600
     }, 
     {
-      "name": "SRAD-OpenMP-PI-t1",
-      "executable": "nice -20 ./srad -i 50 -l 0.5 -r 4016 -c 3664 -t 1",
+      "name": "SRAD-OpenMP-PI-t1-small",
+      "executable": "nice -20 ./srad -i 150 -l 0.5 -r 2008 -c 1832 -t 1",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,

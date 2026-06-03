@@ -26,8 +26,8 @@
   },
   "tests": [
     {
-      "name": "SRAD-OpenCL-PI",
-      "executable": "nice -20 ./srad -i 50 -l 0.5 -r 4016 -c 3664",
+      "name": "SRAD-OpenCL-PI-small",
+      "executable": "nice -20 ./srad -i 150 -l 0.5 -r 2008 -c 1832",
       "governor": "performance",
       "fixed_config": {
         "core_freq": 910,

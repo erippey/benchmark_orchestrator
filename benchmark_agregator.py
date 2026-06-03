@@ -1,6 +1,7 @@
 
 
 import csv
+from datetime import datetime
 import re
 from pathlib import Path
 
@@ -76,16 +77,19 @@ ALL_MANAGED_KEYS = list(set(
 ))
 
 RUN_METADATA_KEYS = [
-    "Signal_Length",
-    "Filter_Length",
-    "Backend",
     "Platform",
-    "N_FFT",
-    "Batch_Size",
-    "Algorithm_Data_Type",
-    "Sample_Format",
-    "Banks",
-    "Channels"
+    "Device",
+    "Algorithm"
+    # "Signal_Length",
+    # "Filter_Length",
+    # "Backend",
+    # "Platform",
+    # "N_FFT",
+    # "Batch_Size",
+    # "Algorithm_Data_Type",
+    # "Sample_Format",
+    # "Banks",
+    # "Channels"
 ]
 
 
@@ -141,16 +145,9 @@ class BenchmarkAggregator:
             return columns
 
         key_map = {
-            "Length": "Signal_Length",
-            "FilterLength": "Filter_Length",
-            "Backend": "Backend",
             "Platform": "Platform",
-            "N_FFT": "N_FFT",
-            "BatchSize": "Batch_Size",
-            "Algorithmdatatype": "Algorithm_Data_Type",
-            "Sampleformat": "Sample_Format",
-            "Banks": "Banks",
-            "Channels": "Channels"
+            "Device": "Device",
+            "Algorithm": "Algorithm"
         }
 
         with open(path, "r", encoding="utf-8") as f:
@@ -277,6 +274,30 @@ class BenchmarkAggregator:
                 watts.append(float(row["watts"]))
 
         return sum(watts) / len(watts) if watts else 0
+    
+    def avg_watts_remove_last(self, path, n):
+
+        rows = []
+
+        with open(path) as f:
+            reader = csv.DictReader(f)
+
+            for row in reader:
+                rows.append({
+                    "timestamp": datetime.fromisoformat(row["timestamp"]),
+                    "watts": float(row["watts"])
+                })
+
+        # Ensure chronological order
+        rows.sort(key=lambda x: x["timestamp"])
+
+        # Remove last n entries
+        if n > 0:
+            rows = rows[:-n]
+
+        watts = [row["watts"] for row in rows]
+
+        return sum(watts) / len(watts) if watts else 0
 
     # -----------------------------
     # run aggregation
@@ -314,16 +335,18 @@ class BenchmarkAggregator:
         if idle_csv.exists():
             row["idle_power_w"] = self.avg_first_n_watts(idle_csv, 60)
 
-        # run power
-        if total_exec_ms:
-            run_seconds = round(total_exec_ms / 1000)
+        # # run power
+        # if total_exec_ms:
+        #     run_seconds = round(total_exec_ms / 1000)
 
-            run_power_csv = run_dir / "run_power.csv"
+        #     run_power_csv = run_dir / "run_power.csv"
 
-            if run_power_csv.exists():
-                row["run_power_w"] = self.avg_first_n_watts(
-                    run_power_csv, run_seconds
-                )
+        #     if run_power_csv.exists():
+        #         row["run_power_w"] = self.avg_first_n_watts(
+        #             run_power_csv, run_seconds
+        #         )
+        run_power_csv = run_dir / "run_power.csv"
+        row["run_power_w"] = self.avg_watts_remove_last(run_power_csv, 5)
 
         return row
 
@@ -372,16 +395,8 @@ class BenchmarkAggregator:
 if __name__ == "__main__":
 
     ADDITIONAL_KEYS = [
-        "Forward FFT Execution Time",
-        "Multiply Accumulate Execution Time",
-        "Inverse FFT Execution Time",
-        "Extract Kernel",
-        "Prepare Kernel",
-        "Reduce Kernel",
-        "SRAD Kernel 1",
-        "SRAD Kernel 2",
-        "Compress Kernel",
-        "Full Iteration"
+        "Kernel Runtime",
+        "Region of Interest"
     ]
 
 
