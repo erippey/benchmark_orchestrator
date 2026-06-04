@@ -79,7 +79,8 @@ ALL_MANAGED_KEYS = list(set(
 RUN_METADATA_KEYS = [
     "Platform",
     "Device",
-    "Algorithm"
+    "Algorithm",
+    "Threads"
     # "Signal_Length",
     # "Filter_Length",
     # "Backend",
@@ -147,7 +148,8 @@ class BenchmarkAggregator:
         key_map = {
             "Platform": "Platform",
             "Device": "Device",
-            "Algorithm": "Algorithm"
+            "Algorithm": "Algorithm",
+            "Threads": "Threads"
         }
 
         with open(path, "r", encoding="utf-8") as f:

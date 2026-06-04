@@ -1,96 +1,374 @@
 import math
 
-from graph_tool_v2_skeleton import *
+from graph_tool_v2_series import *
 
-
-def plot_bank_count(gpu_test_name, cpu_test_name, omp_test_name):
-    independent_variable = {
-        "var_name": "v3d_freq_min",
-        "proper_name": "GPU Frequency (MHz)"
-    }
-
- 
-
-    kernel_names_and_ops = {
-        ("Forward FFT Execution Time", "forward", forward_complexity),
-        ("Multiply Accumulate Execution Time", "complex_multiply", mac_complexity),
-        ("Inverse FFT Execution Time", "inverse", inverse_complexity)
-    }
-    clvk_graph = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "UPOLS using clvk\N{RIGHTWARDS ARROW}GPU", 
-                   test_name=TEST_NAME_MAP[("clfft",None,bank_count)]["test_name"], graph_name_for_file=TEST_NAME_MAP[("clfft",None,bank_count)]["graph_name"], kernel_names_and_ops=kernel_names_and_ops, 
-                   total_ops=total_ops, peak_mflops=5270)
-    
-    independent_variable = {
-        "var_name": "arm_freq_min",
-        "proper_name": "CPU Frequency (MHz)"
-    }
-
-    forward_complexity = n_fft * math.log2(n_fft) * 5
-    mac_complexity = parts * n_fft * 8 
-    inverse_complexity = n_fft * math.log2(n_fft) * 5
-
-    total_ops_2 = (forward_complexity + (mac_complexity + inverse_complexity) * banks) * channels * total_blocks
-    if total_ops != total_ops:
-        raise Exception(f"Operations do not equal: {total_ops} vs {total_ops_2}")
-
-    kernel_names_and_ops = {
-        ("Forward FFT Execution Time", "forward", forward_complexity),
-        ("Multiply Accumulate Execution Time", "complex_multiply", mac_complexity),
-        ("Inverse FFT Execution Time", "inverse", inverse_complexity),
-    }
-
-    fftw_graph_ps = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using FFTW\N{RIGHTWARDS ARROW}CPU", 
-                   test_name=TEST_NAME_MAP[("fftw","powersave",bank_count)]["test_name"], graph_name_for_file=TEST_NAME_MAP[("fftw","powersave",bank_count)]["graph_name"], kernel_names_and_ops=kernel_names_and_ops, 
-                   total_ops=total_ops_2, peak_mflops=38374)
-
-    independent_variable = {
-        "var_name": "arm_freq",
-        "proper_name": "CPU Frequency (MHz)"
-    }
-    
-    fftw_graph_pf = Graph("aggregated_csv/aggregated_results.csv", independent_variable, "Overlap Add using FFTW\N{RIGHTWARDS ARROW}CPU", 
-                   test_name=TEST_NAME_MAP[("fftw","performance",bank_count)]["test_name"], graph_name_for_file=TEST_NAME_MAP[("fftw","performance",bank_count)]["graph_name"], kernel_names_and_ops=kernel_names_and_ops, 
-                   total_ops=total_ops_2, peak_mflops=38374)
-
-    
-    #normalize_graphs([clvk_graph, fftw_graph_pf, fftw_graph_ps])
-
-    clvk_graph.plot()
-    fftw_graph_pf.plot()
-    fftw_graph_ps.plot()
 
 if __name__ == "__main__":
    
+   # define dimensions I guess?
     dims = {
         "gpu_freq": Dimension("v3d_freq_mhz", "GPU frequency", "MHz"),
         "cpu_freq": Dimension("arm_freq", "CPU frequency", "MHz"),
         "algorithm": Dimension("algorithm", "Algorithm")
     }
 
-
+    # pull important rows of data from CSV file
     data = BenchmarkData.from_csv("aggregated_csv/aggregated_results.csv").with_metrics([
         runtime_ms("Kernel Runtime", "kernel_runtime", "Kernel Runtime"),
         runtime_ms("Region of Interest", "roi_runtime", "Region of Interest"),
-        runtime_power()
-        rutnime_power("idle_power_w", "idle_power_w", "Idle Power"),
+        runtime_power(),
+        runtime_power("idle_power_w", "idle_power_w", "Idle Power"),
         energy_j("Kernel Runtime", "run_power_w"),
-        edp("Kernel Runtime", "energy_j")
+        edp("Kernel Runtime", "energy_j"),
     ])
 
-    agg = data.aggregate(
-        group_by=["Algorithm", "v3d_freq", "arm_freq"],
-        value_cols=["kernel_runtime", "roi_runtime", "run_power_w", "energy_j", "edp_j_s"]
-    )
+    # isolate OpenMP and OpenCL produced datasets
+    opencl_data = data.where(Platform="OpenCL")
+    openmp_data = data.where(Platform="OpenMP")
+
+    # Make aggregated grouped datasets
+    agg = {
+        "ALL": data.aggregate(
+            group_by=[
+                "Algorithm",
+                "v3d_freq",
+                "arm_freq",
+                "Platform",
+                "Threads"
+            ],
+            value_cols=[
+                "kernel_runtime",
+                "energy_j",
+                "edp_j_s",
+                "run_power_w"
+            ]
+        ),
+        "CPU": openmp_data.aggregate(
+            group_by=[
+                "Algorithm",
+                "Threads",
+                "arm_freq",
+                "Platform"
+            ],
+            value_cols=[
+                "kernel_runtime",
+                "roi_runtime",
+                "run_power_w",
+                "energy_j",
+                "edp_j_s",
+            ],
+        ),
+        "GPU": opencl_data.aggregate(
+            group_by=[
+                "Algorithm",
+                "v3d_freq",
+                "Threads",
+                "Platform",
+            ],
+            value_cols=[
+                "kernel_runtime",
+                "roi_runtime",
+                "run_power_w",
+                "energy_j",
+                "edp_j_s",
+            ],
+        )
+    }
+
+
+    
+
+    
+
+    # ADD additional imporant rows generated from aggregated data seperated by datatype
+    for device, relative_group in zip(["ALL", "CPU", "GPU"], [["Algorithm"], ["Algorithm", "Threads"], ["Algorithm"]]):
+        agg[device] = add_relative_to_group_best(
+            agg[device],
+            "kernel_runtime",
+            relative_group,
+            higher_is_better=True,
+            out_col="rel_kernel_runtime",
+        )
+
+        agg[device] = add_relative_to_group_best(
+            agg[device],
+            "energy_j",
+            relative_group,
+            higher_is_better=True,
+            out_col="rel_energy_j",
+        )
+
+        agg[device] = add_relative_to_group_best(
+            agg[device],
+            "edp_j_s",
+            relative_group,
+            higher_is_better=False,
+            out_col="rel_edp",
+        )
+
+        agg[device]["Variant"] = np.where(
+            agg[device]["Platform"] == "OpenCL",
+            "OpenCL",
+            "OpenMP-t" + agg[device]["Threads"].astype("Int64").astype(str)
+        )
+
+ 
 
     plotter = Plotter(dims, data.metrics)
-    plotter.plot(agg, PlotSpec(
+
+    plotter.plot(agg["ALL"], PlotSpec(
+        kind="scatter",
+        x="run_power_w",
+        xlabel="Average Power (W)",
+        y="rel_kernel_runtime",
+        ylabel="Relative (%) of Max Runtime",
+
+        title="Relative Time-to-Solution vs Average Power",
+        output="graphs/runtime_by_power.png",
+
+        series_by=["Algorithm", "Variant"],
+        
+        hue_by="Algorithm",
+        shade_by="Variant",
+        marker_by="Variant",
+
+        base_colors={
+            "BFS":    "#4c78a8",
+            "FFT":    "#54a24b",
+            "KMeans": "#9c6ade",
+            "SRAD":   "#7f7f7f",
+        },
+
+        shade_values={
+            "OpenCL":   -0.25,   # dark
+            "OpenMP-t1":  0.00,   # medium
+            "OpenMP-t4":  0.35,   # light
+        },
+
+        legend="outside_right",
+        legend_fontsize=8,
+
+    ))
+
+    plotter.plot(agg["ALL"], PlotSpec(
+        kind="scatter",
+        x="run_power_w",
+        xlabel="Average Power (W)",
+        y="rel_energy_j",
+        ylabel="Relative (%) of Max Energy Consumption",
+
+        title="Relative Energy-to-Solution Across Implementations vs Average Power Draw",
+        output="graphs/energy_by_power.png",
+
+        series_by=["Algorithm", "Variant"],
+        
+        hue_by="Algorithm",
+        shade_by="Variant",
+        marker_by="Variant",
+
+        base_colors={
+            "BFS":    "#4c78a8",
+            "FFT":    "#54a24b",
+            "KMeans": "#9c6ade",
+            "SRAD":   "#7f7f7f",
+        },
+
+        shade_values={
+            "OpenCL":   -0.25,   # dark
+            "OpenMP-t1":  0.00,   # medium
+            "OpenMP-t4":  0.35,   # light
+        },
+
+        legend="outside_right",
+        legend_fontsize=8,
+    ))
+
+    
+    plotter.plot(agg["GPU"], PlotSpec(
         kind="line",
-        x="gpu_freq",
-        y="runtime_ms", 
-        yerr="runtime_ms_std",
-        color_by="algorithm",
-        title="Runtime vs GPU frequency",
-        output="graphs/runtime_by_gpu_freq.png"
+        x="v3d_freq",
+        xlabel="GPU Frequency (MHz)",
+        y="rel_kernel_runtime",
+        ylabel="Relative (%) of Max Runtime",
+
+        title="Relative OpenCL Time-to-Solution vs GPU Frequency",
+        output="graphs/opencl_runtime_by_gpu_freq.png",
+
+        series_by=["Algorithm"],
+
+        hue_by="Algorithm",
+
+        base_colors={
+            "BFS":    "#4c78a8",
+            "FFT":    "#54a24b",
+            "KMeans": "#9c6ade",
+            "SRAD":   "#7f7f7f",
+        },
+
+        shade_values={
+            "OpenCL":   -0.25,   # dark
+        },
+
+        legend="outside_right",
+        legend_fontsize=8,
+    ))
+
+    plotter.plot(agg["GPU"], PlotSpec(
+        kind="line",
+        x="v3d_freq",
+        xlabel="GPU Frequency (MHz)",
+        y="run_power_w",
+        ylabel="Average Power Draw (W)",
+
+        title="OpenCL Average Power Consumtion vs GPU Frequency",
+        output="graphs/opencl_power_by_gpu_freq.png",
+
+        series_by=["Algorithm"],
+
+        hue_by="Algorithm",
+
+        base_colors={
+            "BFS":    "#4c78a8",
+            "FFT":    "#54a24b",
+            "KMeans": "#9c6ade",
+            "SRAD":   "#7f7f7f",
+        },
+
+        shade_values={
+            "OpenCL":   -0.25,   # dark
+        },
+
+        legend="outside_right",
+        legend_fontsize=8,
+    ))
+
+    plotter.plot(agg["GPU"], PlotSpec(
+        kind="line",
+        x="v3d_freq",
+        xlabel="GPU Frequency (MHz)",
+        y="rel_energy_j",
+        ylabel="Relative (%) of Max Evergy Consumption",
+        
+        title="Relative OpenCL Energy-to-Solution vs GPU Frequency",
+        output="graphs/opencl_energy_j_by_gpu_freq.png",
+
+        series_by=["Algorithm"],
+
+        hue_by="Algorithm",
+
+        base_colors={
+            "BFS":    "#4c78a8",
+            "FFT":    "#54a24b",
+            "KMeans": "#9c6ade",
+            "SRAD":   "#7f7f7f",
+        },
+
+        shade_values={
+            "OpenCL":   -0.25,   # dark
+        },
+
+        legend="outside_right",
+        legend_fontsize=8,
+    ))
+    
+
+    plotter.plot(agg["CPU"], PlotSpec(
+        kind="line",
+        x="arm_freq",
+        xlabel="CPU Frequency (MHz)",
+        y="rel_kernel_runtime",
+        ylabel="Relative (%) of Max Runtime",
+
+        
+        title="Relative OpenMP Kernel Runtime vs CPU Frequency",
+        output="graphs/openmp_runtime_by_cpu_freq.png",
+
+        series_by=["Algorithm", "Variant"],
+
+        hue_by="Algorithm",
+        shade_by="Variant",
+        marker_by="Variant",
+
+        base_colors={
+            "BFS":    "#4c78a8",
+            "FFT":    "#54a24b",
+            "KMeans": "#9c6ade",
+            "SRAD":   "#7f7f7f",
+        },
+
+        shade_values={
+            "OpenMP-t1":  0.00,   # medium
+            "OpenMP-t4":  0.35,   # light
+        },
+
+        legend="outside_right",
+        legend_fontsize=8,
+    ))
+
+
+    plotter.plot(agg["CPU"], PlotSpec(
+        kind="line",
+        x="arm_freq",
+        xlabel="CPU Frequency (MHz)",
+        y="run_power_w",
+        ylabel="Average Power Draw (W)",
+
+        title="OpenMP Average Power Consumtion vs CPU Frequency",
+        output="graphs/openmp_power_by_cpu_freq.png",
+
+        series_by=["Algorithm", "Variant"],
+
+        hue_by="Algorithm",
+        shade_by="Variant",
+        marker_by="Variant",
+
+        base_colors={
+            "BFS":    "#4c78a8",
+            "FFT":    "#54a24b",
+            "KMeans": "#9c6ade",
+            "SRAD":   "#7f7f7f",
+        },
+
+        shade_values={
+            "OpenMP-t1":  0.00,   # medium
+            "OpenMP-t4":  0.35,   # light
+        },
+
+        legend="outside_right",
+        legend_fontsize=8,
+    ))
+
+
+    plotter.plot(agg["CPU"], PlotSpec(
+        kind="line",
+        x="arm_freq",
+        xlabel="CPU Frequency (MHz)",
+        y="rel_energy_j",
+        ylabel="Relative (%) of Max Evergy Consumption",
+        
+        title="Relative OpenMP Energy-to-Solution vs CPU Frequency",
+        output="graphs/openmp_energy_j_by_cpu_freq.png",
+
+        series_by=["Algorithm", "Variant"],
+
+        hue_by="Algorithm",
+        shade_by="Variant",
+        marker_by="Variant",
+
+        base_colors={
+            "BFS":    "#4c78a8",
+            "FFT":    "#54a24b",
+            "KMeans": "#9c6ade",
+            "SRAD":   "#7f7f7f",
+        },
+
+        shade_values={
+            "OpenMP-t1":  0.00,   # medium
+            "OpenMP-t4":  0.35,   # light
+        },
+
+        legend="outside_right",
+        legend_fontsize=8,
     ))
 
     

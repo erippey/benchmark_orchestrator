@@ -98,6 +98,14 @@ class BenchmarkData:
             out[metric.name] = metric.fn(out)
             metric_map[metric.name] = metric
         return BenchmarkData(out, metric_map)
+    
+    def where(self, **equals) -> "BenchmarkData":
+        out = self.df
+        for col, value in equals.items():
+            if col not in out.columns:
+                raise KeyError(f"Missing filter column: {col}")
+            out = out[out[col] == value]
+        return BenchmarkData(out.reset_index(drop=True), self.metrics)
 
     def trimmed(self, spec: TrimSpec) -> "BenchmarkData":
         group_by = list(spec.group_by)
@@ -295,6 +303,20 @@ def energy_j(runtime_ms_col: str = "runtime_ms", power_w_col: str = "run_power_w
         "J",
         lambda df: (df[runtime_ms_col] / 1000.0) * df[power_w_col],
         higher_is_better=False,
+    )
+
+def relative(base: Metric, use_max=True) -> Metric:
+    if (use_max):
+        fun = lambda df: (base.fn) / max(base.fn)
+    else:
+        fun = lambda df: (base.fn) / min(base.fn)
+
+    return Metric(
+        f"rel_{base.name}", 
+        f"Relative {base.label}",
+        base.unit,
+        fun,
+        base.higher_is_better
     )
 
 
