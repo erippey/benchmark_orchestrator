@@ -81,7 +81,7 @@ if __name__ == "__main__":
     
 
     # ADD additional imporant rows generated from aggregated data seperated by datatype
-    for device, relative_group in zip(["ALL", "CPU", "GPU"], [["Algorithm"], ["Algorithm", "Threads"], ["Algorithm"]]):
+    for device, relative_group in zip(["ALL", "CPU", "GPU"], [["Algorithm"], ["Algorithm"], ["Algorithm"]]):
         agg[device] = add_relative_to_group_best(
             agg[device],
             "kernel_runtime",
@@ -122,8 +122,11 @@ if __name__ == "__main__":
         xlabel="Average Power (W)",
         y="rel_kernel_runtime",
         ylabel="Relative (%) of Max Runtime",
+        ylim=(0,0.002),
 
-        title="Relative Time-to-Solution vs Average Power",
+        figsize=(7.6,6.6),
+
+        title="Relative Kernel Runtime Accross Implementations vs Average Power",
         output="graphs/runtime_by_power.png",
 
         series_by=["Algorithm", "Variant"],
@@ -145,7 +148,7 @@ if __name__ == "__main__":
             "OpenMP-t4":  0.35,   # light
         },
 
-        legend="outside_right",
+        legend="none",
         legend_fontsize=8,
 
     ))
@@ -154,10 +157,13 @@ if __name__ == "__main__":
         kind="scatter",
         x="run_power_w",
         xlabel="Average Power (W)",
+        xlim=(3.5, 4.5),
         y="rel_energy_j",
         ylabel="Relative (%) of Max Energy Consumption",
 
-        title="Relative Energy-to-Solution Across Implementations vs Average Power Draw",
+        figsize=(7.6,6.6),
+
+        title="Relative Kernel Energy Consumption Across Implementations vs Average Power Draw",
         output="graphs/energy_by_power.png",
 
         series_by=["Algorithm", "Variant"],
@@ -179,7 +185,7 @@ if __name__ == "__main__":
             "OpenMP-t4":  0.35,   # light
         },
 
-        legend="outside_right",
+        legend="none",
         legend_fontsize=8,
     ))
 
@@ -191,7 +197,9 @@ if __name__ == "__main__":
         y="rel_kernel_runtime",
         ylabel="Relative (%) of Max Runtime",
 
-        title="Relative OpenCL Time-to-Solution vs GPU Frequency",
+        figsize=(7.6,6.6),
+
+        title="Relative OpenCL Kernel Runtime vs GPU Frequency",
         output="graphs/opencl_runtime_by_gpu_freq.png",
 
         series_by=["Algorithm"],
@@ -209,7 +217,7 @@ if __name__ == "__main__":
             "OpenCL":   -0.25,   # dark
         },
 
-        legend="outside_right",
+        legend="none",
         legend_fontsize=8,
     ))
 
@@ -219,6 +227,8 @@ if __name__ == "__main__":
         xlabel="GPU Frequency (MHz)",
         y="run_power_w",
         ylabel="Average Power Draw (W)",
+
+        figsize=(7.6,6.6),
 
         title="OpenCL Average Power Consumtion vs GPU Frequency",
         output="graphs/opencl_power_by_gpu_freq.png",
@@ -238,7 +248,7 @@ if __name__ == "__main__":
             "OpenCL":   -0.25,   # dark
         },
 
-        legend="outside_right",
+        legend="none",
         legend_fontsize=8,
     ))
 
@@ -279,7 +289,8 @@ if __name__ == "__main__":
         y="rel_kernel_runtime",
         ylabel="Relative (%) of Max Runtime",
 
-        
+        figsize=(7.6,6.6),
+
         title="Relative OpenMP Kernel Runtime vs CPU Frequency",
         output="graphs/openmp_runtime_by_cpu_freq.png",
 
@@ -301,7 +312,7 @@ if __name__ == "__main__":
             "OpenMP-t4":  0.35,   # light
         },
 
-        legend="outside_right",
+        legend="none",
         legend_fontsize=8,
     ))
 
@@ -312,6 +323,8 @@ if __name__ == "__main__":
         xlabel="CPU Frequency (MHz)",
         y="run_power_w",
         ylabel="Average Power Draw (W)",
+
+        figsize=(7.6,6.6),
 
         title="OpenMP Average Power Consumtion vs CPU Frequency",
         output="graphs/openmp_power_by_cpu_freq.png",
@@ -334,7 +347,7 @@ if __name__ == "__main__":
             "OpenMP-t4":  0.35,   # light
         },
 
-        legend="outside_right",
+        legend="none",
         legend_fontsize=8,
     ))
 

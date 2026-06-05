@@ -195,6 +195,9 @@ class PlotSpec:
     xlabel: Optional[str] = None
     ylabel: Optional[str] = None
 
+    xlim: tuple[int, int] = None
+    ylim: tuple[int, int] = None
+
     figsize: tuple[float, float] = (9.5, 6.0)
     dpi: int = 400
 
@@ -453,6 +456,10 @@ class Plotter:
         self._apply_legend(fig, ax, spec)
         ax.set_xlabel(spec.xlabel or self.label_for(spec.x), fontsize=13)
         ax.set_ylabel(spec.ylabel or self.label_for(spec.y), fontsize=13)
+        if (spec.ylim is not None):
+            ax.set_ylim(spec.ylim)
+        if (spec.xlim is not None):
+            ax.set_xlim(spec.xlim)
         ax.grid(True, alpha=0.35)
         # fig.tight_layout()
         plt.savefig(spec.output, dpi=spec.dpi)
@@ -538,22 +545,6 @@ class Plotter:
             ax.scatter(group[spec.x], group[spec.y], label=label, **style)
         self._finish(fig, ax, spec)
             
-
-
-
-
-
-
-
-        # plt.figure()
-        # series_cols = self._series_cols(spec)
-        # if not series_cols:
-        #     plt.scatter(df[spec.x], df[spec.y])
-        # else:
-        #     for key, part in df.groupby(series_cols, sort=True, dropna=False):
-        #         plt.scatter(part[spec.x], part[spec.y], label=self._series_label(series_cols, key))
-        #     plt.legend(title=self._legend_title(series_cols))
-        # self._finish(spec)
 
     def _bubble(self, df: pd.DataFrame, spec: PlotSpec) -> None:
         if spec.size_by is None:
@@ -646,56 +637,6 @@ def per_watt(metric_col: str, power_w_col: str = "run_power_w", name: Optional[s
         lambda df: df[metric_col] / df[power_w_col],
         higher_is_better=True,
     )
-
-
-# ---- Example usage ----------------------------------------------------------
-# dims = {
-#     "gpu_freq_mhz": Dimension("gpu_freq_mhz", "GPU frequency", "MHz"),
-#     "cpu_freq_mhz": Dimension("cpu_freq_mhz", "CPU frequency", "MHz"),
-#     "problem_size": Dimension("problem_size", "Problem size"),
-#     "algorithm": Dimension("algorithm", "Algorithm"),
-# }
-#
-# data = BenchmarkData.from_csv("results.csv").with_metrics([
-#     runtime_ms("total_exec_ms"),
-#     runtime_ms("kernel_ms", name="kernel_runtime_ms", label="Kernel runtime"),
-#     column_metric("run_power_w", "Average power", "W"),
-#     energy_j("runtime_ms", "run_power_w"),
-#     edp("runtime_ms", "energy_j"),
-# ])
-#
-# agg = data.aggregate(
-#     group_by=["algorithm", "gpu_freq_mhz", "cpu_freq_mhz", "problem_size"],
-#     value_cols=["runtime_ms", "kernel_runtime_ms", "run_power_w", "energy_j", "edp_j_s"],
-# )
-#
-# plotter = Plotter(dims, data.metrics)
-# plotter.plot(agg, PlotSpec(
-#     kind="line",
-#     x="gpu_freq_mhz",
-#     y="runtime_ms",
-#     yerr="runtime_ms_std",
-#     color_by="algorithm",
-#     title="Runtime vs GPU frequency",
-#     output="runtime_by_gpu_freq.png",
-# ))
-# plotter.plot(agg, PlotSpec(
-#     kind="heatmap",
-#     x="gpu_freq_mhz",
-#     color_by="cpu_freq_mhz",
-#     y="runtime_ms",
-#     title="Runtime across CPU/GPU DVFS points",
-#     output="runtime_dvfs_heatmap.png",
-# ))
-# plotter.plot(agg, PlotSpec(
-#     kind="bubble",
-#     x="gpu_freq_mhz",
-#     y="runtime_ms",
-#     size_by="run_power_w",
-#     color_by="algorithm",
-#     title="Runtime vs frequency, bubble size = power",
-#     output="runtime_power_bubble.png",
-# ))
 
 
 # ---- Relative metric builders ----------------------------------------------
