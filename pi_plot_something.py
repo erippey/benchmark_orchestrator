@@ -204,6 +204,9 @@ if __name__ == "__main__":
 
         series_by=["Algorithm"],
 
+        highlight_lowest_by=["Algorithm"],
+        highlight_lowest_label="Lowest Runtime",
+
         hue_by="Algorithm",
 
         base_colors={
@@ -235,6 +238,9 @@ if __name__ == "__main__":
 
         series_by=["Algorithm"],
 
+        highlight_lowest_by=["Algorithm"],
+        highlight_lowest_label="Lowest Power",
+
         hue_by="Algorithm",
 
         base_colors={
@@ -263,6 +269,9 @@ if __name__ == "__main__":
         output="graphs/opencl_energy_j_by_gpu_freq.png",
 
         series_by=["Algorithm"],
+
+        highlight_lowest_by=["Algorithm"],
+        highlight_lowest_label="Lowest Energy Consumption",
 
         hue_by="Algorithm",
 
@@ -295,6 +304,9 @@ if __name__ == "__main__":
         output="graphs/openmp_runtime_by_cpu_freq.png",
 
         series_by=["Algorithm", "Variant"],
+
+        highlight_lowest_by=["Algorithm", "Variant"],
+        highlight_lowest_label="Lowest Runtime",
 
         hue_by="Algorithm",
         shade_by="Variant",
@@ -331,6 +343,9 @@ if __name__ == "__main__":
 
         series_by=["Algorithm", "Variant"],
 
+        highlight_lowest_by=["Algorithm", "Variant"],
+        highlight_lowest_label="Lowest Power",
+
         hue_by="Algorithm",
         shade_by="Variant",
         marker_by="Variant",
@@ -363,6 +378,9 @@ if __name__ == "__main__":
         output="graphs/openmp_energy_j_by_cpu_freq.png",
 
         series_by=["Algorithm", "Variant"],
+
+        highlight_lowest_by=["Algorithm", "Variant"],
+        highlight_lowest_label="Lowest Energy Consumption",
 
         hue_by="Algorithm",
         shade_by="Variant",

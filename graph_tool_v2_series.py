@@ -15,6 +15,7 @@ This is intentionally compact. Treat it as a starting point rather than a framew
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 from pathlib import Path
 import textwrap
 from typing import Any, Callable, Iterable, Sequence, Optional, Literal, Union
@@ -222,6 +223,17 @@ class PlotSpec:
     shade_values: Optional[dict[Any, float]] = None
     category_orders: dict[str, list[Any]] = field(default_factory=dict)
     value_aliases: dict[str, dict[Any, str]] = field(default_factory=dict)
+
+    highlight_highest_by: Optional[Union[str, Sequence[str]]] = None
+    highlight_lowest_by: Optional[Union[str, Sequence[str]]] = None
+
+    highlight_size: float = 95.0
+    highlight_linewidth: float = 1.2
+    highlight_color: str = "black"
+    highlight_alpha: float = 0.6
+
+    highlight_highest_label: Optional[str] = None
+    highlight_lowest_label: Optional[str] = None
 
 
 
@@ -514,6 +526,8 @@ class Plotter:
                     **style,
                 )
 
+        self._apply_highlight_extrema(df, ax, spec)
+
         self._finish(fig, ax, spec)
 
     def _scatter(self, df: pd.DataFrame, spec: PlotSpec) -> None:
@@ -543,6 +557,9 @@ class Plotter:
             style = styles[key]
 
             ax.scatter(group[spec.x], group[spec.y], label=label, **style)
+
+        self._apply_highlight_extrema(df, ax, spec)
+
         self._finish(fig, ax, spec)
             
 
@@ -584,6 +601,177 @@ class Plotter:
         plt.tight_layout()
         plt.savefig(spec.output, dpi=400)
         plt.close()
+
+    # ---------- helpers for highlighting highest lowest point 
+    def _groupby_cols(self, df, cols):
+        """
+        Like df.groupby(cols), but avoids awkward behavior for empty / single-column cases.
+        """
+        cols = self._as_list(cols)
+
+        if not cols:
+            return [(None, df)]
+
+        if len(cols) == 1:
+            return list(df.groupby(cols[0], dropna=False, sort=True))
+
+        return list(df.groupby(cols, dropna=False, sort=True))
+
+
+    def _highlight_scope_label(self, cols) -> str:
+        cols = self._as_list(cols)
+
+        if not cols:
+            return "all data"
+
+        return ", ".join(self.label_for(c) for c in cols)
+
+
+    def _add_highlight_legend_entry(
+        self,
+        ax,
+        *,
+        label: str,
+        color: str,
+        size: float,
+        linewidth: float,
+    ) -> None:
+        """
+        Add an empty artist so the highlight explanation appears at the bottom
+        of the normal legend.
+        """
+        ax.plot(
+            [],
+            [],
+            linestyle="None",
+            marker="o",
+            markerfacecolor="none",
+            markeredgecolor=color,
+            markeredgewidth=linewidth,
+            markersize=math.sqrt(size),
+            label=label,
+        )
+
+
+    def _highlight_extrema(
+        self,
+        ax,
+        df,
+        spec,
+        *,
+        by,
+        mode: str,
+        color: str,
+        size: float,
+        linewidth: float,
+        alpha: float,
+    ) -> int:
+        """
+        Circle the highest or lowest y-value within each group defined by `by`.
+
+        mode: "max" or "min"
+        """
+        by_cols = self._as_list(by)
+
+        required = [spec.x, spec.y, *by_cols]
+        missing = [c for c in required if c not in df.columns]
+        if missing:
+            raise KeyError(f"Cannot highlight extrema; missing columns: {missing}")
+
+        count = 0
+
+        for _, group in self._groupby_cols(df, by_cols):
+            valid = group.dropna(subset=[spec.x, spec.y])
+
+            if valid.empty:
+                continue
+
+            if mode == "max":
+                idx = valid[spec.y].idxmax()
+            elif mode == "min":
+                idx = valid[spec.y].idxmin()
+            else:
+                raise ValueError(f"Unsupported extrema highlight mode: {mode}")
+
+            row = valid.loc[idx]
+
+            ax.scatter(
+                [row[spec.x]],
+                [row[spec.y]],
+                s=size,
+                marker="o",
+                facecolors="none",
+                edgecolors=color,
+                linewidths=linewidth,
+                alpha=alpha,
+                zorder=10,
+                label="_nolegend_",
+            )
+
+            count += 1
+
+        return count
+    
+    def _apply_highlight_extrema(self, df : pd.DataFrame, ax, spec: PlotSpec):
+        # Highlight lowest y-value within each requested group.
+        if spec.highlight_lowest_by is not None:
+            count = self._highlight_extrema(
+                ax,
+                df,
+                spec,
+                by=spec.highlight_lowest_by,
+                mode="min",
+                color=spec.highlight_color,
+                size=spec.highlight_size,
+                linewidth=spec.highlight_linewidth,
+                alpha=spec.highlight_alpha,
+            )
+
+            if count > 0:
+                scope = self._highlight_scope_label(spec.highlight_lowest_by)
+                label = (
+                    spec.highlight_lowest_label
+                    or f"circled: lowest {self.label_for(spec.y)} within {scope}"
+                )
+
+                self._add_highlight_legend_entry(
+                    ax,
+                    label=label,
+                    color=spec.highlight_color,
+                    size=spec.highlight_size,
+                    linewidth=spec.highlight_linewidth,
+                )
+
+        # Highlight highest y-value within each requested group.
+        if spec.highlight_highest_by is not None:
+            highest_size = spec.highlight_size * 1.35
+
+            count = self._highlight_extrema(
+                ax,
+                df,
+                spec,
+                by=spec.highlight_highest_by,
+                mode="max",
+                color=spec.highlight_color,
+                size=highest_size,
+                linewidth=spec.highlight_linewidth,
+                alpha=spec.highlight_alpha,
+            )
+
+            if count > 0:
+                scope = self._highlight_scope_label(spec.highlight_highest_by)
+                label = (
+                    spec.highlight_highest_label
+                    or f"circled: highest {self.label_for(spec.y)} within {scope}"
+                )
+
+                self._add_highlight_legend_entry(
+                    ax,
+                    label=label,
+                    color=spec.highlight_color,
+                    size=highest_size,
+                    linewidth=spec.highlight_linewidth,
+                )
 
 
 # ---- Common metric builders -------------------------------------------------
