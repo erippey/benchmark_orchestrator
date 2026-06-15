@@ -9,12 +9,12 @@
     "username": "dev",
     "backup_ip": "10.10.1.2",
     "root_access": true,
-    "build_dir": "/home/dev/Personal-Rodinia/openmp/bfs",
+    "build_dir": "/home/dev/Personal-Rodinia/openmp/kmeans/kmeans_serial",
     "config_txt": "/boot/firmware/config.txt",
     "comm_file": "/tmp/ready"
   },
   "stability": {
-    "window_size": 40,
+    "window_size": 25,
     "required_consecutive_windows": 3,
     "max_range_watts": 0.201,
     "max_step_delta_watts": 0.101
@@ -26,8 +26,8 @@
   },
   "tests": [
     {
-      "name": "BFS-OpenMP-PI-serial",
-      "executable": "nice -20 ./bfs_serial -f ../../data/bfs/graph8M.txt -i 2000",
+      "name": "KMeans-OpenMP-PI-t1-big",
+      "executable": "nice -20 ./kmeans -f ../../../data/kmeans/819200.txt -i 4",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
@@ -39,7 +39,7 @@
       },
       "sweep": {
         "var": "arm_freq",
-        "values": [1500]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
       },
       "total_iterations": 6,
       "tag_fields": ["arm_freq"],

@@ -1,0 +1,141 @@
+{
+  "host": {
+    "wattsup_com_port": "COM4",
+    "sample_interval_sec": 1.0,
+    "log_root": "C:/Users/erippey3/Documents/benchmark_orchestrator/bench_logs/upols_stream_tests"
+  },
+  "dut": {
+    "hostname": "imd",
+    "username": "imd",
+    "backup_ip": "169.254.65.169",
+    "root_access": true,
+    "build_dir": "/home/imd/Documents/edgedevice-fft/build",
+    "config_txt": "/boot/firmware/config.txt",
+    "comm_file": "/tmp/ready"
+  },
+  "stability": {
+    "window_size": 20,
+    "required_consecutive_windows": 3,
+    "max_range_watts": 0.201,
+    "max_step_delta_watts": 0.101
+  },
+  "retry": {
+    "max_attempts": 8,
+    "cooldown_sec": 120,
+    "ssh_wait_timeout_sec": 300
+  },
+  "tests": [
+    {
+      "name": "nano_clfft_upols_vs_GPU_freq_performance_16_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -b 16 -r 3",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_ola_vs_GPU_freq_performance_16_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 16 -r 3",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_upols_vs_GPU_freq_performance_8_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -b 8 -r 4",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_ola_vs_GPU_freq_performance_8_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 8 -r 4",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_upols_vs_GPU_freq_performance_4_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -b 4 -r 7",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_ola_vs_GPU_freq_performance_4_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 4 -r 7",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_upols_vs_GPU_freq_performance_1_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -b 1 -r 20",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_ola_vs_GPU_freq_performance_1_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 1 -r 20",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    }
+  ]
+}

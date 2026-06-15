@@ -26,28 +26,8 @@
   },
   "tests": [
     {
-      "name": "FFT-OpenMP-PI-t4-32k",
-      "executable": "nice -20 ./fft -p 15 -i 200000 -t 4",
-      "governor": "performance",
-      "fixed_config": {
-        "v3d_freq": 500,
-        "v3d_freq_min": 500,
-        "core_freq": 910,
-        "core_freq_min": 910,
-        "sdram_freq": 4267,
-        "sdram_freq_min": 4267
-      },
-      "sweep": {
-        "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
-      },
-      "total_iterations": 6,
-      "tag_fields": ["arm_freq"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "FFT-OpenMP-PI-t1-32k",
-      "executable": "nice -20 ./fft -p 15 -i 200000 -t 1",
+      "name": "FFT-OpenMP-PI-serial-32k",
+      "executable": "nice -20 ./fft_serial -p 15 -i 200000",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,

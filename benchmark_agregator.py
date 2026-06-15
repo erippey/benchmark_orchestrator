@@ -80,17 +80,17 @@ RUN_METADATA_KEYS = [
     "Platform",
     "Device",
     "Algorithm",
-    "Threads"
-    # "Signal_Length",
-    # "Filter_Length",
-    # "Backend",
+    "Threads",
+    "Signal_Length",
+    "Filter_Length",
+    "Backend",
     # "Platform",
-    # "N_FFT",
+    "N_FFT",
     # "Batch_Size",
     # "Algorithm_Data_Type",
     # "Sample_Format",
-    # "Banks",
-    # "Channels"
+    "Banks",
+    "Channels"
 ]
 
 
@@ -149,7 +149,10 @@ class BenchmarkAggregator:
             "Platform": "Platform",
             "Device": "Device",
             "Algorithm": "Algorithm",
-            "Threads": "Threads"
+            "Threads": "Threads",
+            "Backend": "Backend",
+            "Channels": "Channels",
+            "Banks":  "Banks",
         }
 
         with open(path, "r", encoding="utf-8") as f:
@@ -403,7 +406,7 @@ if __name__ == "__main__":
 
 
 
-    agg = BenchmarkAggregator("bench_logs/", ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
+    agg = BenchmarkAggregator("bench_logs/upols_stream_tests", ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
 
     agg.aggregate()
 

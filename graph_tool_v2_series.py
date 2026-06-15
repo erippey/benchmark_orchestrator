@@ -116,6 +116,32 @@ class BenchmarkData:
                 raise KeyError(f"Cannot filter; missing column: {col!r}")
             out = out[out[col] == value]
         return BenchmarkData(out.reset_index(drop=True), dict(self.metrics))
+    
+    def where_or(self, **equals) -> "BenchmarkData":
+        """Return a filtered BenchmarkData where any equality filter matches.
+
+        Example:
+            cpu_or_gpu = data.where_or(Backend="OpenMP", Platform="CUDA")
+
+        This keeps rows where:
+            Backend == "OpenMP" OR Platform == "CUDA"
+
+        For more complex filters, use `data.subset(lambda df: ...)`.
+        """
+        out = self.df
+
+        if not equals:
+            return BenchmarkData(out.reset_index(drop=True), dict(self.metrics))
+
+        mask = pd.Series(False, index=out.index)
+
+        for col, value in equals.items():
+            if col not in out.columns:
+                raise KeyError(f"Cannot filter; missing column: {col!r}")
+            mask |= out[col] == value
+
+        out = out[mask]
+        return BenchmarkData(out.reset_index(drop=True), dict(self.metrics))
 
     def subset(self, predicate: Callable[[pd.DataFrame], pd.Series]) -> "BenchmarkData":
         """Return a filtered BenchmarkData using a boolean-mask function."""
@@ -194,7 +220,9 @@ class PlotSpec:
     size_by: Optional[str] = None
 
     xlabel: Optional[str] = None
+    xlabel_fontsize: int = 12
     ylabel: Optional[str] = None
+    ylabel_fontsize: int = 12
 
     xlim: tuple[int, int] = None
     ylim: tuple[int, int] = None
@@ -207,6 +235,7 @@ class PlotSpec:
     legend_fontsize: int = 8
 
     title_wrap: int = 72
+    title_fontsize: int = 15
 
     # existing
     palette: str = "tab20"
@@ -415,17 +444,34 @@ class Plotter:
         if not handles:
             return
 
+        # Shared legend kwargs
+        legend_kwargs = {
+            "fontsize": spec.legend_fontsize,
+            "frameon": True,
+        }
+
+        # Legends outside the plot area
         if spec.legend == "outside_right":
             ax.legend(
                 handles,
                 labels,
                 loc="center left",
                 bbox_to_anchor=(1.02, 0.5),
-                fontsize=spec.legend_fontsize,
-                frameon=True,
+                **legend_kwargs,
             )
+            return
 
-        elif spec.legend == "bottom":
+        if spec.legend == "outside_left":
+            ax.legend(
+                handles,
+                labels,
+                loc="center right",
+                bbox_to_anchor=(-0.02, 0.5),
+                **legend_kwargs,
+            )
+            return
+
+        if spec.legend == "bottom":
             ncol = spec.legend_ncol
             if ncol is None:
                 ncol = min(4, max(1, len(labels)))
@@ -436,12 +482,61 @@ class Plotter:
                 loc="upper center",
                 bbox_to_anchor=(0.5, -0.18),
                 ncol=ncol,
-                fontsize=spec.legend_fontsize,
-                frameon=True,
+                **legend_kwargs,
+            )
+            return
+
+        if spec.legend == "top":
+            ncol = spec.legend_ncol
+            if ncol is None:
+                ncol = min(4, max(1, len(labels)))
+
+            ax.legend(
+                handles,
+                labels,
+                loc="lower center",
+                bbox_to_anchor=(0.5, 1.02),
+                ncol=ncol,
+                **legend_kwargs,
+            )
+            return
+
+        # Legends inside the plot area
+        loc_map = {
+            "best": "best",
+
+            "upper_left": "upper left",
+            "upper_right": "upper right",
+            "lower_left": "lower left",
+            "lower_right": "lower right",
+
+            "top_left": "upper left",
+            "top_right": "upper right",
+            "bottom_left": "lower left",
+            "bottom_right": "lower right",
+
+            "center": "center",
+            "center_left": "center left",
+            "center_right": "center right",
+            "upper_center": "upper center",
+            "lower_center": "lower center",
+        }
+
+        loc = loc_map.get(spec.legend)
+
+        if loc is None:
+            raise ValueError(
+                f"Unknown legend location {spec.legend!r}. "
+                f"Valid options are: none, outside_right, outside_left, bottom, top, "
+                f"{', '.join(sorted(loc_map.keys()))}"
             )
 
-        else:
-            ax.legend(fontsize=spec.legend_fontsize, frameon=True)
+        ax.legend(
+            handles,
+            labels,
+            loc=loc,
+            **legend_kwargs,
+        )
 
     def plot(self, df: pd.DataFrame, spec: PlotSpec) -> None:
         if spec.kind == "line":
@@ -456,9 +551,9 @@ class Plotter:
             raise ValueError(f"Unsupported plot kind: {spec.kind}")
 
     def _finish(self, spec: PlotSpec) -> None:
-        plt.title(spec.title, fontsize=15, wrap=True)
-        plt.xlabel(spec.xlabel or self.label_for(spec.x), fontsize=13)
-        plt.ylabel(spec.ylabel or self.label_for(spec.y), fontsize=13)
+        plt.title(spec.title, fontsize=spec.title_fontsize, wrap=True)
+        plt.xlabel(spec.xlabel or self.label_for(spec.x), fontsize=spec.xlabel_fontsize)
+        plt.ylabel(spec.ylabel or self.label_for(spec.y), fontsize=spec.ylabel_fontsize)
         plt.grid(True, alpha=0.35)
         plt.tight_layout()
         plt.savefig(spec.output, dpi=spec.dpi)
@@ -466,8 +561,8 @@ class Plotter:
 
     def _finish(self, fig, ax, spec: PlotSpec) -> None:
         self._apply_legend(fig, ax, spec)
-        ax.set_xlabel(spec.xlabel or self.label_for(spec.x), fontsize=13)
-        ax.set_ylabel(spec.ylabel or self.label_for(spec.y), fontsize=13)
+        ax.set_xlabel(spec.xlabel or self.label_for(spec.x), fontsize=spec.xlabel_fontsize)
+        ax.set_ylabel(spec.ylabel or self.label_for(spec.y), fontsize=spec.ylabel_fontsize)
         if (spec.ylim is not None):
             ax.set_ylim(spec.ylim)
         if (spec.xlim is not None):
@@ -482,7 +577,7 @@ class Plotter:
         fig, ax = plt.subplots(figsize=spec.figsize, layout="constrained")
 
         title = "\n".join(textwrap.wrap(spec.title, width=spec.title_wrap))
-        fig.suptitle(title, fontsize=14)
+        fig.suptitle(title, fontsize=spec.title_fontsize)
 
         series_cols = self._as_list(spec.series_by)
 

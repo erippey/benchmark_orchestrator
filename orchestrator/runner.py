@@ -158,7 +158,7 @@ class BenchmarkRunner:
                         cmd = (
                             f"(cd {build} && "
                             f"setsid nohup {exe} {args} "
-                            f"> {remote_log_dir}/stdout.txt 2>&1 "
+                            f"&> {remote_log_dir}/stdout.txt 2>&1 "
                             f"< /dev/null & "
                             f"echo $! > {remote_log_dir}/run.pid)"
                         )
