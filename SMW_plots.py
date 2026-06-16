@@ -110,7 +110,7 @@ DERIVED = [
     Metric("operation_count", "Operation Count", "ops", operation_count),
     Metric(
         "flops",
-        "Throughput",
+        "flops",
         "FLOP/s",
         lambda df: df["operation_count"] / (pd.to_numeric(df["total_exec_ms"], errors="coerce") / 1000.0),
         higher_is_better=True,
@@ -122,6 +122,13 @@ DERIVED = [
         lambda df: (df["flops"] / 1.0e6) / pd.to_numeric(df["run_power_w"], errors="coerce"),
         higher_is_better=True,
     ),
+    Metric(
+        "throughput",
+        "Throughput",
+        "Input Samples/s",
+        lambda df: 1000000 / (pd.to_numeric(df["total_exec_ms"], errors="coerce") / 1000.0),
+        higher_is_better=True,
+    )
 ]
 
 
@@ -153,13 +160,13 @@ def main() -> None:
 
     gpu_agg = gpu.aggregate(
         ["Device", "algorithm_family", "gpu_freq_mhz"],
-        ["mflops_per_w"],
+        ["mflops_per_w", "throughput", "run_power_w"],
         aggregator="mean",
         include_std=True,
     )
     cpu_agg = cpu.aggregate(
         ["Device", "algorithm_family", "cpu_freq_mhz"],
-        ["mflops_per_w"],
+        ["mflops_per_w", "throughput", "run_power_w"],
         aggregator="mean",
         include_std=True,
     )
