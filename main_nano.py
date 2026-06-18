@@ -11,8 +11,8 @@ def main():
         try: 
             config = load_config(cf_file)
 
-            manager = CM5DeviceManager(config)
-            #manager = NanoDeviceManager(config)
+            #manager = CM5DeviceManager(config)
+            manager = NanoDeviceManager(config)
 
             runner = BenchmarkRunner(config, manager)
 

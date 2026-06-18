@@ -26,92 +26,50 @@
   },
   "tests": [
     {
+      "name": "nano_clfft_upols_vs_GPU_freq_performance_16_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -b 16 -r 3",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_ola_vs_GPU_freq_performance_16_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 16 -r 3",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_upols_vs_GPU_freq_performance_8_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -b 8 -r 4",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
       "name": "nano_clfft_ola_vs_GPU_freq_performance_8_banks_clvk",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 8 -r 9",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "ID",
-        "values": [5, 6, 7, 8, 9, 10, 11]
-      },
-      "total_iterations": 6,
-      "tag_fields": ["ID"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "nano_cufft_upols_vs_GPU_freq_performance_1_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be cufft-upols -b 1 -r 20",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "ID",
-        "values": [4, 5, 6, 7, 8, 9, 10, 11]
-      },
-      "total_iterations": 6,
-      "tag_fields": ["ID"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "nano_cufft_ola_vs_GPU_freq_performance_1_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be cufft-ola -b 1 -r 110",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "ID",
-        "values": [4, 5, 6, 7, 8, 9, 10, 11]
-      },
-      "total_iterations": 6,
-      "tag_fields": ["ID"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "nano_clfft_upols_vs_GPU_freq_performance_1_banks_clvk",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -b 1 -r 8",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "ID",
-        "values": [4, 5, 6, 7, 8, 9, 10, 11]
-      },
-      "total_iterations": 6,
-      "tag_fields": ["ID"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "nano_clfft_ola_vs_GPU_freq_performance_1_banks_clvk",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 1 -r 30",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "ID",
-        "values": [4, 5, 6, 7, 8, 9, 10, 11]
-      },
-      "total_iterations": 6,
-      "tag_fields": ["ID"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "nano_cufft_upols_vs_GPU_freq_performance_4_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be cufft-upols -b 4 -r 15",
-      "governor": "performance",
-      "fixed_config": {
-      },
-      "sweep": {
-        "var": "ID",
-        "values": [4, 5, 6, 7, 8, 9, 10, 11]
-      },
-      "total_iterations": 6,
-      "tag_fields": ["ID"],
-      "max_runtime_sec": 600
-    },
-    {
-      "name": "nano_cufft_ola_vs_GPU_freq_performance_4_banks",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be cufft-ola -b 4 -r 45",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 8 -r 4",
       "governor": "performance",
       "fixed_config": {
       },
@@ -125,7 +83,7 @@
     },
     {
       "name": "nano_clfft_upols_vs_GPU_freq_performance_4_banks_clvk",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -b 4 -r 5",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -b 4 -r 7",
       "governor": "performance",
       "fixed_config": {
       },
@@ -139,7 +97,35 @@
     },
     {
       "name": "nano_clfft_ola_vs_GPU_freq_performance_4_banks_clvk",
-      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 4 -r 16",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 4 -r 7",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_upols_vs_GPU_freq_performance_1_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-upols -b 1 -r 20",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [4, 5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "nano_clfft_ola_vs_GPU_freq_performance_1_banks_clvk",
+      "executable": "nice -20 ./internal_stream_perf -w 0 -be clfft-ola -b 1 -r 20",
       "governor": "performance",
       "fixed_config": {
       },

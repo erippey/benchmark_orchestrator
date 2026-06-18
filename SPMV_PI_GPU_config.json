@@ -1,0 +1,49 @@
+{
+  "host": {
+    "wattsup_com_port": "COM3",
+    "sample_interval_sec": 1.0,
+    "log_root": "C:/Users/erippey3/Documents/benchmark_orchestrator/bench_logs"
+  },
+  "dut": {
+    "hostname": "pi-01",
+    "username": "dev",
+    "backup_ip": "10.10.1.2",
+    "root_access": true,
+    "build_dir": "/home/dev/Personal-Rodinia/opencl/SPMV",
+    "config_txt": "/boot/firmware/config.txt",
+    "comm_file": "/tmp/ready"
+  },
+  "stability": {
+    "window_size": 25,
+    "required_consecutive_windows": 3,
+    "max_range_watts": 0.201,
+    "max_step_delta_watts": 0.101
+  },
+  "retry": {
+    "max_attempts": 8,
+    "cooldown_sec": 120,
+    "ssh_wait_timeout_sec": 300
+  },
+  "tests": [
+    {
+      "name": "SPMV-OpenCL-PI",
+      "executable": "nice -20 ./csr -v -i csrmatrix_R1_N65536_N5000_S05 -k src/spmv_kernel -j 75",
+      "governor": "performance",
+      "fixed_config": {
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "arm_freq": 2400,
+        "arm_freq_min": 2400,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "v3d_freq",
+        "values": [500, 550, 600, 650, 700, 750, 800, 850, 900, 960]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["v3d_freq"],
+      "max_runtime_sec": 600
+    }
+  ]
+}

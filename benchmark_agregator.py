@@ -406,8 +406,8 @@ if __name__ == "__main__":
 
 
 
-    agg = BenchmarkAggregator("bench_logs/upols_stream_tests", ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
+    agg = BenchmarkAggregator("bench_logs/", ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
 
     agg.aggregate()
 
-    agg.write_csv("aggregated_csv/aggregated_results.csv")
+    agg.write_csv("aggregated_csv/full_set_aggregated_results.csv")

@@ -14,7 +14,7 @@ This is intentionally compact. Treat it as a starting point rather than a framew
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import math
 from pathlib import Path
 import textwrap
@@ -28,7 +28,7 @@ import matplotlib.colors as mcolors
 
 MetricFn = Callable[[pd.DataFrame], pd.Series]
 Aggregator = Literal["mean", "median", "min", "max"]
-PlotKind = Literal["line", "scatter", "heatmap", "bubble"]
+PlotKind = Literal["line", "scatter", "heatmap", "bubble", "bar"]
 
 
 @dataclass(frozen=True)
@@ -218,6 +218,36 @@ class PlotSpec:
     yerr: Optional[str] = None
     series_by: Optional[Union[str, Sequence[str]]] = None
     size_by: Optional[str] = None
+    color_by: Optional[str] = None
+
+    # Bar-chart layout. For a hierarchical bar chart, use:
+    #   bar_group_by=outer x-axis grouping, e.g. device_backend
+    #   bar_subgroup_by=middle grouping, e.g. algorithm
+    #   x=leaf label repeated on each bar, e.g. problem_size
+    bar_group_by: Optional[Union[str, Sequence[str]]] = None
+    bar_subgroup_by: Optional[Union[str, Sequence[str]]] = None
+    bar_label_mode: str = "hierarchical"  # hierarchical, flat, leaf, none
+
+    bar_width: float = 0.82
+    bar_group_gap: float = 1.10
+    bar_subgroup_gap: float = 0.35
+    bar_error_capsize: float = 3.0
+    bar_edgecolor: Optional[Any] = None
+    bar_linewidth: float = 0.0
+    bar_alpha: float = 0.95
+
+    bar_value_labels: bool = False
+    bar_value_fmt: str = "{:.3g}"
+    bar_value_rotation: float = 0.0
+    bar_value_padding: float = 3.0
+    bar_value_fontsize: int = 8
+
+    bar_tick_label_rotation: float = 0.0
+    bar_tick_label_fontsize: int = 9
+    bar_subgroup_label_fontsize: int = 9
+    bar_group_label_fontsize: int = 10
+    bar_multilevel_bottom: float = 0.24
+    bar_show_group_separators: bool = True
 
     xlabel: Optional[str] = None
     xlabel_fontsize: int = 12
@@ -547,6 +577,8 @@ class Plotter:
             self._heatmap(df, spec)
         elif spec.kind == "bubble":
             self._bubble(df, spec)
+        elif spec.kind == "bar":
+            self._bar(df, spec)
         else:
             raise ValueError(f"Unsupported plot kind: {spec.kind}")
 
@@ -567,9 +599,13 @@ class Plotter:
             ax.set_ylim(spec.ylim)
         if (spec.xlim is not None):
             ax.set_xlim(spec.xlim)
-        ax.grid(True, alpha=0.35)
+        if spec.kind == "bar":
+            ax.grid(True, axis="y", alpha=0.35)
+            ax.xaxis.grid(False)
+        else:
+            ax.grid(True, alpha=0.35)
         # fig.tight_layout()
-        plt.savefig(spec.output, dpi=spec.dpi)
+        plt.savefig(spec.output, dpi=spec.dpi, bbox_inches="tight")
         plt.close(fig)
 
     def _line(self, df, spec) -> None:
@@ -658,27 +694,339 @@ class Plotter:
         self._finish(fig, ax, spec)
             
 
+    # ---------- bar-chart helpers ------------------------------------------------
+
+    def _unique_preserve_order(self, values):
+        out = []
+        seen = set()
+        for value in values:
+            key = self._hashable_key(value)
+            if key not in seen:
+                seen.add(key)
+                out.append(value)
+        return out
+
+    @staticmethod
+    def _hashable_key(value):
+        if isinstance(value, tuple):
+            return tuple(Plotter._hashable_key(v) for v in value)
+        try:
+            hash(value)
+            return value
+        except TypeError:
+            return repr(value)
+
+    def _row_key(self, row, cols: Sequence[str]):
+        vals = tuple(row[col] for col in cols)
+        if not vals:
+            return None
+        return vals[0] if len(vals) == 1 else vals
+
+    def _display_value(self, col: str, value, spec: PlotSpec) -> str:
+        alias_map = spec.value_aliases.get(col, {})
+        return str(alias_map.get(value, value))
+
+    def _key_label(self, cols: Sequence[str], key, spec: PlotSpec, *, include_names: bool = False) -> str:
+        cols = list(cols)
+        if not cols:
+            return ""
+        if not isinstance(key, tuple):
+            key = (key,)
+
+        parts = []
+        for col, value in zip(cols, key):
+            value_label = self._display_value(col, value, spec)
+            if include_names:
+                parts.append(f"{self.label_for(col)}={value_label}")
+            else:
+                parts.append(value_label)
+        return " / ".join(parts)
+
+    def _category_rank_map(self, df: pd.DataFrame, col: str, spec: PlotSpec) -> dict[Any, int]:
+        explicit = list(spec.category_orders.get(col, []))
+        seen = list(pd.unique(df[col]))
+
+        ordered = []
+        used = set()
+        for value in explicit + seen:
+            key = self._hashable_key(value)
+            if key not in used:
+                used.add(key)
+                ordered.append(value)
+
+        return {value: i for i, value in enumerate(ordered)}
+
+    def _sort_by_category_orders(self, df: pd.DataFrame, cols: Sequence[str], spec: PlotSpec) -> pd.DataFrame:
+        if not cols:
+            return df
+
+        out = df.copy()
+        tmp_cols = []
+        for i, col in enumerate(cols):
+            rank = self._category_rank_map(out, col, spec)
+            tmp = f"__plot_sort_{i}"
+            out[tmp] = out[col].map(rank).astype(float)
+            tmp_cols.append(tmp)
+
+        out = out.sort_values(tmp_cols, kind="mergesort").drop(columns=tmp_cols)
+        return out
+
+    def _format_bar_value(self, value, fmt: str) -> str:
+        if pd.isna(value):
+            return ""
+        try:
+            return fmt.format(value)
+        except Exception:
+            return format(value, fmt)
+
+    def _bar_style_spec(self, spec: PlotSpec, group_cols: list[str], subgroup_cols: list[str]) -> PlotSpec:
+        """Return a shallow spec copy with useful default bar styling semantics."""
+        style_spec = replace(spec)
+
+        # If the caller did not specify hue/shade, use the hierarchy in a way
+        # that usually reads naturally: algorithm gets color, leaf size gets tone.
+        if style_spec.hue_by is None:
+            if subgroup_cols:
+                style_spec.hue_by = subgroup_cols[0]
+            elif group_cols:
+                style_spec.hue_by = group_cols[0]
+            else:
+                style_spec.hue_by = spec.x
+
+        if style_spec.shade_by is None and subgroup_cols and spec.x not in self._as_list(style_spec.hue_by):
+            style_spec.shade_by = spec.x
+
+        return style_spec
+
+    def _bar(self, df: pd.DataFrame, spec: PlotSpec) -> None:
+        group_cols = self._as_list(spec.bar_group_by)
+        subgroup_cols = self._as_list(spec.bar_subgroup_by)
+        leaf_col = spec.x
+        hierarchy_cols = [*group_cols, *subgroup_cols, leaf_col]
+
+        required = [leaf_col, spec.y, *group_cols, *subgroup_cols]
+        if spec.yerr is not None:
+            required.append(spec.yerr)
+        missing = [col for col in required if col not in df.columns]
+        if missing:
+            raise KeyError(f"Cannot create bar plot; missing columns: {missing}")
+
+        plot_df = df.dropna(subset=[spec.y]).copy()
+        if plot_df.empty:
+            raise ValueError("Cannot create bar plot from an empty dataframe")
+
+        plot_df = self._sort_by_category_orders(plot_df, hierarchy_cols, spec).reset_index(drop=True)
+
+        positions = []
+        group_positions: dict[Any, list[float]] = {}
+        subgroup_positions: dict[Any, list[float]] = {}
+        group_bounds: list[tuple[Any, float, float]] = []
+
+        prev_group_key = object()
+        prev_subgroup_key = object()
+        cursor = 0.0
+
+        for _, row in plot_df.iterrows():
+            group_key = self._row_key(row, group_cols)
+            subgroup_key = self._row_key(row, [*group_cols, *subgroup_cols])
+
+            if positions:
+                if group_cols and group_key != prev_group_key:
+                    cursor += spec.bar_group_gap
+                elif subgroup_cols and subgroup_key != prev_subgroup_key:
+                    cursor += spec.bar_subgroup_gap
+
+            x_pos = cursor
+            positions.append(x_pos)
+            group_positions.setdefault(group_key, []).append(x_pos)
+            subgroup_positions.setdefault(subgroup_key, []).append(x_pos)
+
+            prev_group_key = group_key
+            prev_subgroup_key = subgroup_key
+            cursor += 1.0
+
+        plot_df["__bar_xpos"] = positions
+
+        # Determine style keys. series_by overrides the default legend/style grouping.
+        style_spec = self._bar_style_spec(spec, group_cols, subgroup_cols)
+        style_cols = self._unique_preserve_order(
+            [
+                *self._as_list(style_spec.series_by),
+                *self._as_list(style_spec.hue_by),
+                *self._as_list(style_spec.shade_by),
+            ]
+        )
+
+        style_keys = [self._row_key(row, style_cols) for _, row in plot_df.iterrows()]
+        unique_style_keys = self._unique_preserve_order(style_keys)
+        styles = self._series_styles(unique_style_keys, style_cols, style_spec)
+
+        legend_cols = self._as_list(style_spec.series_by)
+        if not legend_cols:
+            legend_cols = self._unique_preserve_order(
+                [*self._as_list(style_spec.hue_by), *self._as_list(style_spec.shade_by)]
+            )
+
+        seen_legend_labels = set()
+
+        fig, ax = plt.subplots(figsize=spec.figsize)
+        title = "\n".join(textwrap.wrap(spec.title, width=spec.title_wrap))
+        fig.suptitle(title, fontsize=spec.title_fontsize)
+        ax.set_axisbelow(True)
+
+        for i, row in plot_df.iterrows():
+            style_key = style_keys[i]
+            style = styles[style_key]
+
+            yerr = None
+            if spec.yerr is not None and pd.notna(row[spec.yerr]):
+                yerr = row[spec.yerr]
+
+            legend_key = self._row_key(row, legend_cols)
+            legend_label = self._key_label(legend_cols, legend_key, spec, include_names=True)
+            if not legend_label:
+                legend_label = None
+            elif legend_label in seen_legend_labels:
+                legend_label = "_nolegend_"
+            else:
+                seen_legend_labels.add(legend_label)
+
+            bars = ax.bar(
+                row["__bar_xpos"],
+                row[spec.y],
+                width=spec.bar_width,
+                yerr=yerr,
+                capsize=spec.bar_error_capsize if yerr is not None else 0,
+                color=style["color"],
+                edgecolor=spec.bar_edgecolor,
+                linewidth=spec.bar_linewidth,
+                alpha=spec.bar_alpha,
+                label=legend_label,
+                zorder=3,
+            )
+
+            if spec.bar_value_labels:
+                ax.bar_label(
+                    bars,
+                    labels=[self._format_bar_value(row[spec.y], spec.bar_value_fmt)],
+                    padding=spec.bar_value_padding,
+                    fontsize=spec.bar_value_fontsize,
+                    rotation=spec.bar_value_rotation,
+                )
+
+        # X labels.
+        mode = spec.bar_label_mode.lower()
+        if mode not in {"hierarchical", "flat", "leaf", "none"}:
+            raise ValueError("bar_label_mode must be one of: hierarchical, flat, leaf, none")
+
+        ax.set_xticks(plot_df["__bar_xpos"])
+        if mode == "none":
+            ax.set_xticklabels([])
+        elif mode == "flat":
+            labels = [
+                "\n".join(self._display_value(col, row[col], spec) for col in hierarchy_cols)
+                for _, row in plot_df.iterrows()
+            ]
+            ax.set_xticklabels(
+                labels,
+                rotation=spec.bar_tick_label_rotation,
+                ha="right" if spec.bar_tick_label_rotation else "center",
+                fontsize=spec.bar_tick_label_fontsize,
+            )
+        else:
+            labels = [self._display_value(leaf_col, row[leaf_col], spec) for _, row in plot_df.iterrows()]
+            ax.set_xticklabels(
+                labels,
+                rotation=spec.bar_tick_label_rotation,
+                ha="right" if spec.bar_tick_label_rotation else "center",
+                fontsize=spec.bar_tick_label_fontsize,
+            )
+
+        if mode == "hierarchical":
+            # The normal tick label is the leaf (for example, problem size). Add
+            # subgroup and group labels once, centered below their spans.
+            y_level = -0.12
+            if subgroup_cols:
+                for subgroup_key, xs in subgroup_positions.items():
+                    label_key = subgroup_key
+                    if group_cols:
+                        # Strip the group part so the subgroup label is not repeated as
+                        # "RPi / OLA" under every RPi group. We only want "OLA".
+                        if not isinstance(subgroup_key, tuple):
+                            label_key = subgroup_key
+                        else:
+                            label_key = subgroup_key[len(group_cols):]
+                            if len(label_key) == 1:
+                                label_key = label_key[0]
+                    ax.text(
+                        float(np.mean(xs)),
+                        y_level,
+                        self._key_label(subgroup_cols, label_key, spec),
+                        ha="center",
+                        va="top",
+                        fontsize=spec.bar_subgroup_label_fontsize,
+                        transform=ax.get_xaxis_transform(),
+                        clip_on=False,
+                    )
+                y_level -= 0.12
+
+            if group_cols:
+                prev_last = None
+                for group_key, xs in group_positions.items():
+                    ax.text(
+                        float(np.mean(xs)),
+                        y_level,
+                        self._key_label(group_cols, group_key, spec),
+                        ha="center",
+                        va="top",
+                        fontsize=spec.bar_group_label_fontsize,
+                        transform=ax.get_xaxis_transform(),
+                        clip_on=False,
+                    )
+
+                    if spec.bar_show_group_separators and prev_last is not None:
+                        boundary = (prev_last + xs[0]) / 2.0
+                        ax.axvline(boundary, linewidth=0.8, alpha=0.35, zorder=0)
+                    prev_last = xs[-1]
+
+            # Leave room for the extra x-axis label rows.
+            fig.subplots_adjust(bottom=spec.bar_multilevel_bottom)
+
+        # Bar extrema highlighting uses numeric positions, not the categorical leaf values.
+        if spec.highlight_lowest_by is not None or spec.highlight_highest_by is not None:
+            highlight_spec = replace(spec, x="__bar_xpos")
+            self._apply_highlight_extrema(plot_df, ax, highlight_spec)
+
+        # Hierarchical bar labels usually make a conventional xlabel redundant.
+        finish_spec = replace(spec, xlabel=spec.xlabel if spec.xlabel is not None else (" " if mode == "hierarchical" else None))
+        self._finish(fig, ax, finish_spec)
+
     def _bubble(self, df: pd.DataFrame, spec: PlotSpec) -> None:
         if spec.size_by is None:
             raise ValueError("Bubble plots require PlotSpec.size_by")
-        plt.figure()
+
+        fig, ax = plt.subplots(figsize=spec.figsize, layout="constrained")
+        title = "\n".join(textwrap.wrap(spec.title, width=spec.title_wrap))
+        fig.suptitle(title, fontsize=spec.title_fontsize)
+
         sizes = df[spec.size_by].astype(float)
         sizes = 50 + 450 * (sizes - sizes.min()) / max(float(sizes.max() - sizes.min()), 1e-12)
         series_cols = self._series_cols(spec)
+
         if not series_cols:
-            plt.scatter(df[spec.x], df[spec.y], s=sizes, alpha=0.65)
+            ax.scatter(df[spec.x], df[spec.y], s=sizes, alpha=0.65)
         else:
             for key, part in df.groupby(series_cols, sort=True, dropna=False):
                 idx = part.index
-                plt.scatter(
+                ax.scatter(
                     part[spec.x],
                     part[spec.y],
                     s=sizes.loc[idx],
                     alpha=0.65,
                     label=self._series_label(series_cols, key),
                 )
-            plt.legend(title=self._legend_title(series_cols))
-        self._finish(spec)
+
+        self._finish(fig, ax, spec)
 
     def _heatmap(self, df: pd.DataFrame, spec: PlotSpec) -> None:
         if spec.color_by is None:

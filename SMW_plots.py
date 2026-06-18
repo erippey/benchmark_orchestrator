@@ -71,6 +71,55 @@ def algorithm_family(df: pd.DataFrame) -> pd.Series:
     )
 
 
+def device_backend(df: pd.DataFrame) -> pd.Series:
+    """Collapse device names and backends into labels such as:
+       RPi-clfft, nano-cufft, etc.
+    """
+
+    if "Device" in df.columns:
+        dev = df["Device"].fillna("").astype(str).str.lower()
+    else:
+        dev = pd.Series("", index=df.index)
+
+    if "Backend" in df.columns:
+        be = df["Backend"].fillna("").astype(str).str.lower()
+    else:
+        be = pd.Series("", index=df.index)
+
+    # Backend names
+    be_name = np.select(
+        [
+            be.str.contains("fftw", na=False),
+            be.str.contains("clfft", na=False),
+            be.str.contains("cufft", na=False),
+        ],
+        [
+            "fftw",
+            "clfft",
+            "cufft",
+        ],
+        default="unknown",
+    )
+
+    # Device names
+    dev_name = np.select(
+        [
+            dev.str.contains("jetsonorinnanosuper", na=False),
+            dev.str.contains("raspberrypicomputemodule5", na=False),
+        ],
+        [
+            "nano",
+            "RPi",
+        ],
+        default="unknown",
+    )
+
+    return pd.Series(
+        dev_name + "-" + be_name,
+        index=df.index,
+    )
+
+
 def operation_count(df: pd.DataFrame) -> pd.Series:
     fam = algorithm_family(df)
     return fam.map(OP_COUNTS).astype(float)
@@ -107,6 +156,7 @@ DERIVED = [
         higher_is_better=False,
     ),
     Metric("algorithm_family", "Algorithm", "", algorithm_family),
+    Metric("dev_backend", "Device + Backend", "", device_backend),
     Metric("operation_count", "Operation Count", "ops", operation_count),
     Metric(
         "flops",
@@ -147,7 +197,7 @@ def main() -> None:
         lambda df: (
             df["gpu_freq_mhz"].notna()
             & (df["gpu_freq_mhz"] > 0)
-            & df["Backend"].astype(str).str.startswith("clfft")
+            & df["Backend"].astype(str).str.startswith(("clfft", "cufft"))
         )
     )
     cpu = plot_data.subset(
@@ -159,13 +209,13 @@ def main() -> None:
     )
 
     gpu_agg = gpu.aggregate(
-        ["Device", "algorithm_family", "gpu_freq_mhz"],
+        ["Device", "algorithm_family", "dev_backend", "gpu_freq_mhz"],
         ["mflops_per_w", "throughput", "run_power_w"],
         aggregator="mean",
         include_std=True,
     )
     cpu_agg = cpu.aggregate(
-        ["Device", "algorithm_family", "cpu_freq_mhz"],
+        ["Device", "algorithm_family", "dev_backend", "cpu_freq_mhz"],
         ["mflops_per_w", "throughput", "run_power_w"],
         aggregator="mean",
         include_std=True,
@@ -189,22 +239,23 @@ def main() -> None:
             kind="line",
 
             x="gpu_freq_mhz",
-            xlabel_fontsize=20,
+            xlabel_fontsize=14,
             y="mflops_per_w",
-            ylabel_fontsize=20,
+            ylabel_fontsize=14,
             yerr="mflops_per_w_std",
-            series_by=["Device", "algorithm_family"],
+            series_by=["algorithm_family", "dev_backend"],
 
-            ylim=(110, 500),
+            ylim=(120, 1900),
 
 
-            hue_by="Device",
+            hue_by="dev_backend",
             shade_by="algorithm_family",
             marker_by="algorithm_family",
 
             base_colors={
-                "JetsonOrinNanoSuper": "#54a24b",
-                "RaspberryPiComputeModule5": "#db1916",
+                "nano-cufft": "#54a24b",
+                "nano-clfft": "#7634ac",
+                "RPi-clfft": "#db1916",
             },
 
             shade_values={
@@ -214,16 +265,16 @@ def main() -> None:
 
 
             title="GPU Frequency vs Convolution Efficiency",
-            title_fontsize=24,
+            title_fontsize=16,
             output=str(out_dir / "gpu_freq_vs_mflops_per_w.png"),
 
             legend="none",
 
 
-            highlight_highest_by=["Device", "algorithm_family"],
+            highlight_highest_by=["dev_backend", "algorithm_family"],
             highlight_highest_label="circled: best point within each device/algorithm",
-            highlight_linewidth=2,
-            highlight_size=115,
+            highlight_linewidth=1.5,
+            highlight_size=95,
             highlight_alpha=1,
         ),
     )
@@ -235,17 +286,18 @@ def main() -> None:
 
 
             x="cpu_freq_mhz",
-            xlabel_fontsize=20,
+            xlabel_fontsize=14,
             y="mflops_per_w",
-            ylabel_fontsize=20,
+            ylabel_fontsize=14,
             yerr="mflops_per_w_std",
             series_by=["Device", "algorithm_family"],
 
-            ylim=(110, 500),
+            ylim=(75, 1500),
 
 
             hue_by="Device",
             marker_by="algorithm_family",
+            shade_by="algorithm_family",
 
             base_colors={
                 "JetsonOrinNanoSuper": "#7634ac",
@@ -259,7 +311,7 @@ def main() -> None:
 
 
             title="CPU Frequency vs Convolution Efficiency",
-            title_fontsize=24,
+            title_fontsize=16,
             output=str(out_dir / "cpu_freq_vs_mflops_per_w.png"),
 
             legend="none",
@@ -267,8 +319,8 @@ def main() -> None:
 
             highlight_highest_by=["Device", "algorithm_family"],
             highlight_highest_label="circled: best point within each device/algorithm",
-            highlight_linewidth=3,
-            highlight_size=115,
+            highlight_linewidth=1.5,
+            highlight_size=95,
             highlight_alpha=1,
         ),
     )

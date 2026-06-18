@@ -35,7 +35,7 @@
       },
       "sweep": {
         "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
@@ -49,7 +49,7 @@
       },
       "sweep": {
         "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq"],
@@ -81,7 +81,7 @@
       },
       "sweep": {
         "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
@@ -95,7 +95,7 @@
       },
       "sweep": {
         "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq"],
@@ -127,7 +127,7 @@
       },
       "sweep": {
         "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
@@ -141,7 +141,7 @@
       },
       "sweep": {
         "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq"],
@@ -173,7 +173,7 @@
       },
       "sweep": {
         "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
@@ -187,7 +187,7 @@
       },
       "sweep": {
         "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq"],
@@ -219,7 +219,7 @@
       },
       "sweep": {
         "var": "arm_freq_min",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600, 1500]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq_min", "core_freq_min", "v3d_freq_min"],
@@ -233,7 +233,7 @@
       },
       "sweep": {
         "var": "arm_freq",
-        "values": [2400, 2300, 2200, 2100, 1900, 1800, 1700, 1600]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600]
       },
       "total_iterations": 9,
       "tag_fields": ["arm_freq"],
