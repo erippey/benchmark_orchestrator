@@ -249,8 +249,10 @@ class PlotSpec:
     bar_multilevel_bottom: float = 0.24
     bar_show_group_separators: bool = True
 
+    xscale: str = "linear"
     xlabel: Optional[str] = None
     xlabel_fontsize: int = 12
+    yscale: str = "linear"
     ylabel: Optional[str] = None
     ylabel_fontsize: int = 12
 
@@ -593,12 +595,17 @@ class Plotter:
 
     def _finish(self, fig, ax, spec: PlotSpec) -> None:
         self._apply_legend(fig, ax, spec)
-        ax.set_xlabel(spec.xlabel or self.label_for(spec.x), fontsize=spec.xlabel_fontsize)
+        if spec.kind != "bar":
+            ax.set_xlabel(spec.xlabel or self.label_for(spec.x), fontsize=spec.xlabel_fontsize)
+            if (spec.xlim is not None):
+                ax.set_xlim(spec.xlim)
+            ax.set_xscale(spec.xscale)
+            
         ax.set_ylabel(spec.ylabel or self.label_for(spec.y), fontsize=spec.ylabel_fontsize)
+        ax.set_yscale(spec.yscale)
         if (spec.ylim is not None):
             ax.set_ylim(spec.ylim)
-        if (spec.xlim is not None):
-            ax.set_xlim(spec.xlim)
+
         if spec.kind == "bar":
             ax.grid(True, axis="y", alpha=0.35)
             ax.xaxis.grid(False)
@@ -846,6 +853,7 @@ class Plotter:
             cursor += 1.0
 
         plot_df["__bar_xpos"] = positions
+
 
         # Determine style keys. series_by overrides the default legend/style grouping.
         style_spec = self._bar_style_spec(spec, group_cols, subgroup_cols)
@@ -1312,5 +1320,114 @@ def add_relative_to_group_best(
 
     if as_percent:
         out[out_col] *= 100.0
+
+    return out
+
+
+def add_relative_to_group_x(
+    df: pd.DataFrame,
+    value_col: str,
+    group_by: Sequence[str],
+    x_col: str,
+    x_value: str,
+    *,
+    higher_is_better: bool,
+    out_col: Optional[str] = None,
+    as_percent: bool = False,
+) -> pd.DataFrame:
+    """
+    Add a relative score column normalized within each group.
+
+    x_col is the name of the column used to select the baseline.
+
+    The selected baseline is chosen via x_value. x_value can be:
+        - "min": use the row with the minimum x_col value within each group
+        - "max": use the row with the maximum x_col value within each group
+        - a specific value, e.g. "1800", 1800, "Serial", etc.
+
+    For higher-is-better metrics:
+        relative = current / selected_baseline
+
+    For lower-is-better metrics:
+        relative = selected_baseline / current
+
+    So the baseline point in each group is 1.0. Values better than the
+    baseline may be > 1.0, and values worse than the baseline may be < 1.0.
+    """
+    if out_col is None:
+        out_col = f"rel_{value_col}"
+
+    needed_cols = list(group_by) + [value_col, x_col]
+    missing = [c for c in needed_cols if c not in df.columns]
+    if missing:
+        raise KeyError(f"Missing columns for relative normalization: {missing}")
+
+    out = df.copy()
+    group_cols = list(group_by)
+
+    grouped = out.groupby(group_cols, dropna=False)
+
+    if x_value == "min":
+        # Index of baseline row per group: row with minimum x_col.
+        baseline_idx = grouped[x_col].idxmin()
+
+    elif x_value == "max":
+        # Index of baseline row per group: row with maximum x_col.
+        baseline_idx = grouped[x_col].idxmax()
+
+    else:
+        # Select rows whose x_col matches the requested baseline value.
+        # This tries both direct comparison and string comparison so that
+        # x_value="1800" can still match numeric 1800 columns.
+        mask = (out[x_col] == x_value) | (out[x_col].astype(str) == str(x_value))
+        candidates = out.loc[mask]
+
+        if candidates.empty:
+            raise ValueError(
+                f"No rows found where {x_col!r} matches baseline value {x_value!r}"
+            )
+
+        # If multiple rows match within a group, take the first one.
+        baseline_idx = (
+            candidates
+            .groupby(group_cols, dropna=False)
+            .head(1)
+            .index
+        )
+
+    # Build a DataFrame containing one baseline value per group.
+    baseline = out.loc[baseline_idx, group_cols + [value_col]].rename(
+        columns={value_col: "__baseline_value"}
+    )
+
+    # Merge baseline values back onto every row in the same group.
+    out = out.merge(
+        baseline,
+        on=group_cols,
+        how="left",
+        validate="many_to_one",
+    )
+
+    missing_baseline = out["__baseline_value"].isna()
+    if missing_baseline.any():
+        missing_groups = (
+            out.loc[missing_baseline, group_cols]
+            .drop_duplicates()
+            .to_dict("records")
+        )
+        raise ValueError(
+            f"Some groups do not have a baseline for {x_col}={x_value!r}: "
+            f"{missing_groups}"
+        )
+
+    if higher_is_better:
+        out[out_col] = out[value_col] / out["__baseline_value"]
+    else:
+        out[out_col] = out["__baseline_value"] / out[value_col]
+
+    if as_percent:
+        out[out_col] *= 100.0
+
+    out = out.drop(columns="__baseline_value")
 
     return out
