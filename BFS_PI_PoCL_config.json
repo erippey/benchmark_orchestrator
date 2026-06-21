@@ -1,0 +1,49 @@
+{
+  "host": {
+    "wattsup_com_port": "COM3",
+    "sample_interval_sec": 1.0,
+    "log_root": "C:/Users/erippey3/Documents/benchmark_orchestrator/bench_logs"
+  },
+  "dut": {
+    "hostname": "pi-01",
+    "username": "dev",
+    "backup_ip": "10.10.1.2",
+    "root_access": true,
+    "build_dir": "/home/dev/Personal-Rodinia/opencl/bfs",
+    "config_txt": "/boot/firmware/config.txt",
+    "comm_file": "/tmp/ready"
+  },
+  "stability": {
+    "window_size": 40,
+    "required_consecutive_windows": 3,
+    "max_range_watts": 0.201,
+    "max_step_delta_watts": 0.101
+  },
+  "retry": {
+    "max_attempts": 8,
+    "cooldown_sec": 120,
+    "ssh_wait_timeout_sec": 300
+  },
+  "tests": [
+    {
+      "name": "BFS-PoCL-PI",
+      "executable": "nice -20 ./bfs_cpu -f ../../data/bfs/graph8M.txt -i 8",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    }
+  ]
+}

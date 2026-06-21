@@ -275,7 +275,7 @@ DERIVED = [
 
 
 def main() -> None:
-    csv_path = Path("./aggregated_csv/aggregated_results.csv")
+    csv_path = Path("./aggregated_csv/streaming_conv_results.csv")
     out_dir = Path("graphs")
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -283,7 +283,7 @@ def main() -> None:
 
     # Use raw rows here. Once every bucket has enough repeats, you can replace
     # `plot_data` with a trimmed version that drops fastest/slowest runs per bucket.
-    plot_data = data
+    plot_data = data.where(Governor="performance")
 
     # First aggregate repeated benchmark runs at each operating frequency.
     freq_agg = plot_data.aggregate(
@@ -333,12 +333,13 @@ def main() -> None:
             category_orders={
                 "dev_backend": ["RPi_fftw", "RPi_clfft", "nano_clfft", "nano_cufft"],
                 "algorithm_family": ["OLA", "UPF-OS"],
-                "Banks": [16, 8, 1],
+                "Banks": [16, 8, 4, 1],
             },
             value_aliases={
                 "Banks": {
                     16: "16",
                     8: "8",
+                    4: "4",
                     1: "1",    
                 },
                 "dev_backend": {
