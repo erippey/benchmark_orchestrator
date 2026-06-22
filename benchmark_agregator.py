@@ -4,6 +4,7 @@ import csv
 from datetime import datetime
 import re
 from pathlib import Path
+import sys
 
 
 PI_MANAGED_KEYS = [
@@ -404,10 +405,19 @@ if __name__ == "__main__":
         "Region of Interest"
     ]
 
+    input_dir = "bench_logs/upols_stream_tests"
+    output_file = "aggregated_csv/streaming_conv_results.csv"
+
+    for i in range(len(sys.argv) - 1):
+        if sys.argv[i] == "-i":
+            input_dir = sys.argv[i+1]
+        if sys.argv[i] == "-o":
+            output_file = sys.argv[i+1]
 
 
-    agg = BenchmarkAggregator("bench_logs/upols_stream_tests", ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
+
+    agg = BenchmarkAggregator(input_dir, ADDITIONAL_KEYS, ALL_MANAGED_KEYS)
 
     agg.aggregate()
 
-    agg.write_csv("aggregated_csv/streaming_conv_results.csv")
+    agg.write_csv(output_file)

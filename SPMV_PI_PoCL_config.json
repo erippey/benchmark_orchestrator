@@ -27,7 +27,7 @@
   "tests": [
     {
       "name": "SPMV-PoCL-PI",
-      "executable": "nice -20 ./csr_cpu -v -i csrmatrix_R1_N65536_N5000_S05 -k src/spmv_kernel -j 200",
+      "executable": "nice -20 ./csr_cpu -v -i csrmatrix_R1_N65536_D5000_S05 -k src/spmv_kernel -j 200",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,

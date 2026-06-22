@@ -26,8 +26,8 @@
   },
   "tests": [
     {
-      "name": "KMeams-PoCL-RPI-big",
-      "executable": "nice -20 ./kmeans_cpu -o false -f ../../data/kmeans/819200.txt -i 5",
+      "name": "KMeams-PoCL-RPI",
+      "executable": "nice -20 ./kmeans_cpu -o false -f ../../data/kmeans/kdd_cup -i 8",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
