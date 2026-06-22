@@ -321,7 +321,7 @@ def main() -> None:
             kind="bar",
             x="Banks",
             y=BAR_VALUE,
-            title="FFT convolution efficiency by backend, algorithm, and problem size",
+            title="FFT Convolution Efficiency by Backend, Algorithm, and Bank Count",
             output=str(out_dir / "efficiency_bar_best_frequency.png"),
             bar_group_by="dev_backend",
             bar_subgroup_by="algorithm_family",
