@@ -10,11 +10,15 @@ class RunLogger:
         self.root = Path(root_dir)
         self.root.mkdir(parents=True, exist_ok=True)
 
-    def new_run_dir(self, test_name, tag, date):
+    def new_run_dir(self, test_name, tag, date, one_off=False):
 
         today = date
 
-        base = self.root / today / f"{test_name}" / f"{tag}"
+        if one_off:
+            base = self.root / today / f"{test_name}" / "one_off"
+        else:
+            base = self.root / today / f"{test_name}" / f"{tag}"
+
         base.mkdir(parents=True, exist_ok=True)
 
         run_id = 1

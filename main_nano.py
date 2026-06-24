@@ -5,23 +5,31 @@ from orchestrator.nano_device_manager import NanoDeviceManager
 import sys
 
 def main():
+    cf_file = ""
+    one_off = False
+
+    for arg in sys.argv[1:]:
+        if (".json" in arg):
+            print(f'Running config {arg}')
+            cf_file = arg
+        if (arg == "-o" or arg == "--one-off"):
+            print("Running one off test")
+            one_off = True
 
 
-    for cf_file in sys.argv[1:]:
-        try: 
-            config = load_config(cf_file)
+    try: 
+        config = load_config(cf_file)
 
-            #manager = CM5DeviceManager(config)
-            manager = NanoDeviceManager(config)
+        #manager = CM5DeviceManager(config)
+        manager = NanoDeviceManager(config)
 
-            runner = BenchmarkRunner(config, manager)
+        runner = BenchmarkRunner(config, manager, one_off=one_off)
 
-            runner.run()
+        runner.run()
 
-            runner.close()
-        except Exception as e:
-            print(f"exception: {e}")
-            continue
+        runner.close()
+    except Exception as e:
+        print(f"exception: {e}")
 
 
 

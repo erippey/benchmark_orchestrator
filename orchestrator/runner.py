@@ -12,9 +12,10 @@ from .config_loader import expand_tests, config_tag
 
 class BenchmarkRunner:
 
-    def __init__(self, config, device_manager):
+    def __init__(self, config, device_manager, one_off=False):
 
         self.cfg = config
+        self.one_off = one_off
 
         self.meter = WattsUpMeter(
             port=config["host"]["wattsup_com_port"]
@@ -32,7 +33,7 @@ class BenchmarkRunner:
         self.logger = RunLogger(config["host"]["log_root"])
 
         dut = config["dut"]
-        ip = config.get("backup_ip") # backup ip may or may not exist
+        ip = dut.get("backup_ip", config.get("backup_ip")) # backup ip may or may not exist
 
         self.client = DUTClient(
             dut["hostname"],
@@ -41,7 +42,7 @@ class BenchmarkRunner:
             backup_ip=ip
         )
 
-        self.tests = expand_tests(config)
+        self.tests = expand_tests(config, one_off=self.one_off)
 
         self.date = datetime.now().strftime("%Y-%m-%d")
 
@@ -107,7 +108,12 @@ class BenchmarkRunner:
 
             for iteration in range(test["iterations"]):
 
-                run_dir = self.logger.new_run_dir(test["name"], tag, self.date)
+                run_dir = self.logger.new_run_dir(
+                    test["name"],
+                    tag,
+                    self.date,
+                    one_off=test.get("one_off", False)
+                )
 
                 attempt = 1
 
@@ -170,12 +176,14 @@ class BenchmarkRunner:
                         if not pid:
                             raise Exception("Failed to capture benchmark PID")
                         
-                        self.device_manager.save_runtime_metadata(test, run_dir, self.date)
+                        
 
                         # wait for warmup stabilization
                         print("waiting for executable to reach stable power draw...")
 
                         self.wait_for_idle()
+
+                        self.device_manager.save_runtime_metadata(test, run_dir, self.date)
 
                         print("Stable power achieved, beginnining recording performance and power draw...")
 
@@ -220,7 +228,7 @@ class BenchmarkRunner:
                                 
                                 if now - test_start > test["max_runtime_sec"]:
                                     code, out, _ = self.client.run(
-                                        f(f"kill {pid}"), as_root=does_device_need_root
+                                        f"kill {pid}", as_root=does_device_need_root
                                     )
                                     raise Exception("Benchmark timeout")
 

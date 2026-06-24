@@ -28,7 +28,7 @@
 
     {
       "name": "SPMV-OpenMP-PI",
-      "executable": "nice -20 ./csr -v -i csrmatrix_R1_N65536_N5000_S05 -j 1000 -t 4",
+      "executable": "nice -20 ./csr -v -i csrmatrix_R1_N65536_D5000_S05 -j 1000 -t 4",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
