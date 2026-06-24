@@ -13,6 +13,7 @@ from graph_tool_v2_series_bar import (
     PlotSpec,
     Plotter,
     TrimSpec,
+    make_algorithm_stats_table,
     runtime_ms,
     runtime_power,
     energy_j,
@@ -62,12 +63,12 @@ def implementation_component(df: pd.DataFrame) -> pd.Series:
     platform = df.get("Platform", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
 
     cpu_impl = (
-        backend.str.contains("fftw|openmp|cpu|serial", regex=True, na=False)
-        | platform.str.contains("openmp|fftw|cpu|serial", regex=True, na=False)
+        backend.str.contains("fftw|openmp|cpu|serial|pocl", regex=True, na=False)
+        | platform.str.contains("openmp|fftw|cpu|serial|pocl", regex=True, na=False)
     )
     gpu_impl = (
         backend.str.contains("clfft|cufft|cuda|opencl|gpu|vulkan|clvk", regex=True, na=False)
-        | platform.str.contains("cuda|opencl|vulkan|clvk|gpu", regex=True, na=False)
+        | platform.str.contains("cuda|opencl|vulkan|clvk|gpu|clvk", regex=True, na=False)
     )
 
     # CPU wins ties so an FFTW row that happens to carry stale GPU metadata
@@ -84,12 +85,17 @@ def variant(df: pd.DataFrame) -> pd.Series:
 
     gpu_impl = (
         backend.str.contains("clfft|cufft|cuda|opencl|gpu|vulkan|clvk", regex=True, na=False)
-        | platform.str.contains("cuda|opencl|vulkan|clvk|gpu", regex=True, na=False)
+        | platform.str.contains("cuda|opencl|vulkan|clvk|gpu|clvk", regex=True, na=False)
+    )
+
+    pocl_impl = (
+        backend.str.contains("pocl", regex=True, na=False)
+        | platform.str.contains("pocl", regex=True, na=False)
     )
 
 
     return pd.Series(
-        np.select([gpu_impl, threads > 1, threads == 1], ["OpenCL", "OpenMP", "Serial"], default="unknown"),
+        np.select([gpu_impl, pocl_impl, threads > 1, threads == 1], ["clvk", "PoCL", "OpenMP", "Serial"], default="unknown"),
         index=df.index,
     )
 
@@ -202,8 +208,8 @@ DERIVED = [
 
 
 def main() -> None:
-    csv_path = Path("./aggregated_csv/full_set_aggregated_results.csv")
-    out_dir = Path("graphs")
+    csv_path = Path("./aggregated_csv/HPEC_results.csv")
+    out_dir = Path("graphs/HPEC/")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     data = BenchmarkData.from_csv(csv_path).with_metrics(DERIVED)
@@ -252,6 +258,9 @@ def main() -> None:
             include_std=True,
     )
 
+    make_algorithm_stats_table(agg, "CPU").to_csv(out_dir / "cpu_algorithm_stats.csv", index=False)
+    make_algorithm_stats_table(agg, "GPU").to_csv(out_dir / "gpu_algorithm_stats.csv", index=False)
+
 
 
     dimensions = {
@@ -278,12 +287,12 @@ def main() -> None:
         xlabel="Average Power (W)",
         y="energy_j",
         yscale="log",
-        ylabel="Kernel Runtime (ms)",
+        ylabel="Kernel Energy Consumption (J)",
 
         figsize=(8,4),
 
-        title="Kernel Runtime vs Average Power Draw for All Algorithm Variants",
-        output="graphs/energy_by_power.png",
+        title="Kernel Energy Consumption vs Average Power Draw for All Algorithm Variants",
+        output="graphs/HPEC/energy_by_power.png",
 
         series_by=["Algorithm", "variant"],
         
@@ -300,9 +309,17 @@ def main() -> None:
         },
 
         shade_values={
-            "OpenCL":   -0.25,   # dark
-            "OpenMP":  0.00,   # medium
-            "Serial":  0.35,   # light
+            "clvk": -0.40,
+            "PoCL": -0.15,
+            "OpenMP": 0.10,
+            "Serial": 0.35,
+        },
+
+        marker_values={
+            "Serial": "s",
+            "OpenMP": "^",
+            "PoCL": "D",
+            "clvk": "o"
         },
 
         legend="outside_right",
@@ -322,7 +339,7 @@ def main() -> None:
         figsize=(8,4),
 
         title="Kernel Runtime Across Implementations vs Average Power Draw",
-        output="graphs/runtime_by_power.png",
+        output="graphs/HPEC/runtime_by_power.png",
 
         series_by=["Algorithm", "variant"],
         
@@ -339,9 +356,17 @@ def main() -> None:
         },
 
         shade_values={
-            "OpenCL":   -0.25,   # dark
-            "OpenMP":  0.00,   # medium
-            "Serial":  0.35,   # light
+            "clvk": -0.40,
+            "PoCL": -0.15,
+            "OpenMP": 0.10,
+            "Serial": 0.35,
+        },
+
+        marker_values={
+            "Serial": "s",
+            "OpenMP": "^",
+            "PoCL": "D",
+            "clvk": "o"
         },
 
         legend="outside_right",
@@ -355,8 +380,11 @@ def main() -> None:
         agg,
         group_by=["Algorithm", "variant"],
         value_col="energy_j",
-        mode="min"
+        mode="min",
     )
+
+    bar_df = bar_df.copy()
+    bar_df["impl_class"] = np.where(bar_df["variant"].eq("clvk"), "GPU", "CPU")
 
     plotter.plot(bar_df, PlotSpec(
         kind="bar",
@@ -367,28 +395,37 @@ def main() -> None:
         yscale="log",
 
         bar_group_by="Algorithm",
-        bar_multilevel_bottom=0.30,
+        bar_group_gap=1.15,
+        bar_subgroup_gap=0.1,
+        bar_width=0.72,
+        bar_multilevel_bottom=0.32,
 
         category_orders={
             "Algorithm": ["BFS", "FFT", "KMeans", "SRAD", "SPMV"],
-            "variant": ["Serial", "OpenMP", "OpenCL"],
+            "variant": ["Serial", "OpenMP", "PoCL", "clvk"],
         },
 
         value_aliases={
             "variant": {
-                "OpenCL": "OCL",
+                "clvk": "clvk",
                 "Serial": "Ser.",
                 "OpenMP": "OMP",
+                "PoCL": "PoCL",
+            },
+            "impl_class": {
+                "CPU": "CPU",
+                "GPU": "GPU",
             },
         },
 
-        figsize=(10, 8),
+        figsize=(12, 9),
 
         title="Kernel Energy Consumption by Algorithm and Variant",
-        output="graphs/energy_by_algorithm_variant.png",
+        output="graphs/HPEC/energy_by_algorithm_variant.png",
 
         hue_by="Algorithm",
         shade_by="variant",
+        pattern_by="variant",
 
         base_colors={
             "BFS":    "#4c78a8",
@@ -399,12 +436,30 @@ def main() -> None:
         },
 
         shade_values={
-            "OpenCL": -0.25,
-            "OpenMP": 0.00,
+            "clvk": -0.40,
+            "PoCL": -0.15,
+            "OpenMP": 0.10,
             "Serial": 0.35,
         },
 
-        legend="outside_right",
+        marker_values={
+            "Serial": "s",
+            "OpenMP": "^",
+            "PoCL": "D",
+            "clvk": "o"
+        },
+
+        pattern_values={
+            "Serial": "",
+            "OpenMP": "//",
+            "PoCL": "xx",
+            "clvk": r"\\",
+        },
+
+        bar_edgecolor="black",
+        bar_linewidth=0.4,
+
+        legend="none",
         legend_fontsize=8,
     ))
 
@@ -419,8 +474,8 @@ def main() -> None:
 
         figsize=(8,4),
 
-        title="Relative OpenCL Kernel Performance vs GPU Frequency",
-        output="graphs/opencl_runtime_by_gpu_freq.png",
+        title="Relative clvk Kernel Performance vs GPU Frequency",
+        output="graphs/HPEC/opencl_runtime_by_gpu_freq.png",
 
         series_by=["Algorithm", "variant"],
 
@@ -440,7 +495,17 @@ def main() -> None:
         },
 
         shade_values={
-            "OpenCL":   -0.25,   # dark
+            "clvk": -0.40,
+            "PoCL": -0.15,
+            "OpenMP": 0.10,
+            "Serial": 0.35,
+        },
+
+        marker_values={
+            "Serial": "s",
+            "OpenMP": "^",
+            "PoCL": "D",
+            "clvk": "o"
         },
 
         legend="outside_right",
@@ -456,8 +521,8 @@ def main() -> None:
 
         figsize=(8,4),
 
-        title="OpenCL Average Power Consumtion vs GPU Frequency",
-        output="graphs/opencl_power_by_gpu_freq.png",
+        title="clvk Average Power Consumtion vs GPU Frequency",
+        output="graphs/HPEC/opencl_power_by_gpu_freq.png",
 
         series_by=["Algorithm", "variant"],
 
@@ -477,7 +542,17 @@ def main() -> None:
         },
 
         shade_values={
-            "OpenCL":   -0.25,   # dark
+            "clvk": -0.40,
+            "PoCL": -0.15,
+            "OpenMP": 0.10,
+            "Serial": 0.35,
+        },
+
+        marker_values={
+            "Serial": "s",
+            "OpenMP": "^",
+            "PoCL": "D",
+            "clvk": "o"
         },
 
         legend="outside_right",
@@ -494,8 +569,8 @@ def main() -> None:
 
         figsize=(8,4),
         
-        title="Relative OpenCL Energy-to-Solution vs GPU Frequency",
-        output="graphs/opencl_energy_j_by_gpu_freq.png",
+        title="Relative clvk Energy-to-Solution vs GPU Frequency",
+        output="graphs/HPEC/opencl_energy_j_by_gpu_freq.png",
 
         series_by=["Algorithm", "variant"],
 
@@ -515,7 +590,17 @@ def main() -> None:
         },
 
         shade_values={
-            "OpenCL":   -0.25,   # dark
+            "clvk": -0.40,
+            "PoCL": -0.15,
+            "OpenMP": 0.10,
+            "Serial": 0.35,
+        },
+
+        marker_values={
+            "Serial": "s",
+            "OpenMP": "^",
+            "PoCL": "D",
+            "clvk": "o"
         },
 
         legend="outside_right",
@@ -533,7 +618,7 @@ def main() -> None:
         figsize=(7,5),
 
         title="Relative CPU Kernel Performance vs CPU Frequency",
-        output="graphs/openmp_runtime_by_cpu_freq.png",
+        output="graphs/HPEC/openmp_runtime_by_cpu_freq.png",
 
         series_by=["Algorithm", "variant"],
 
@@ -553,8 +638,17 @@ def main() -> None:
         },
 
         shade_values={
-            "Serial":  0.00,   # medium
-            "OpenMP":  0.35,   # light
+            "clvk": -0.40,
+            "PoCL": -0.15,
+            "OpenMP": 0.10,
+            "Serial": 0.35,
+        },
+
+        marker_values={
+            "Serial": "s",
+            "OpenMP": "^",
+            "PoCL": "D",
+            "clvk": "o"
         },
 
         legend="none",
@@ -572,7 +666,7 @@ def main() -> None:
         figsize=(8,4),
 
         title="CPU Average Power Consumtion vs CPU Frequency",
-        output="graphs/openmp_power_by_cpu_freq.png",
+        output="graphs/HPEC/openmp_power_by_cpu_freq.png",
 
         series_by=["Algorithm", "variant"],
 
@@ -592,8 +686,17 @@ def main() -> None:
         },
 
         shade_values={
-            "Serial":  0.00,   # medium
-            "OpenMP":  0.35,   # light
+            "clvk": -0.40,
+            "PoCL": -0.15,
+            "OpenMP": 0.10,
+            "Serial": 0.35,
+        },
+
+        marker_values={
+            "Serial": "s",
+            "OpenMP": "^",
+            "PoCL": "D",
+            "clvk": "o"
         },
 
         legend="outside_right",
@@ -611,7 +714,7 @@ def main() -> None:
         figsize=(7,5),
         
         title="Relative CPU Energy-to-Solution vs CPU Frequency",
-        output="graphs/openmp_energy_j_by_cpu_freq.png",
+        output="graphs/HPEC/openmp_energy_j_by_cpu_freq.png",
 
         series_by=["Algorithm", "variant"],
 
@@ -631,15 +734,24 @@ def main() -> None:
         },
 
         shade_values={
-            "Serial":  0.00,   # medium
-            "OpenMP":  0.35,   # light
+            "clvk": -0.40,
+            "PoCL": -0.15,
+            "OpenMP": 0.10,
+            "Serial": 0.35,
+        },
+
+        marker_values={
+            "Serial": "s",
+            "OpenMP": "^",
+            "PoCL": "D",
+            "clvk": "o"
         },
 
         legend="none",
         legend_fontsize=8,
     ))
 
-    agg.to_csv("graphs/HPEC_cumulative.csv")
+    agg.to_csv("graphs/HPEC/HPEC_cumulative.csv")
 
 
 

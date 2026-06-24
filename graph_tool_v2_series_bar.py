@@ -279,9 +279,18 @@ class PlotSpec:
     marker_by: Optional[Union[str, Sequence[str]]] = None
     linestyle_by: Optional[Union[str, Sequence[str]]] = None
 
+    # Bar-only non-color semantics. Matplotlib calls these hatches.
+    # Good for grayscale printing and colorblind-accessible figures.
+    pattern_by: Optional[Union[str, Sequence[str]]] = None
+
     # explicit style control
     base_colors: Optional[dict[Any, Any]] = None
     shade_values: Optional[dict[Any, float]] = None
+    marker_values: Optional[dict[Any, str]] = None
+    pattern_values: Optional[dict[Any, str]] = None
+    pattern_cycle: Sequence[str] = field(
+        default_factory=lambda: ["", "//", "\\", "xx", "++", "--", "oo", "..", "**"]
+    )
     category_orders: dict[str, list[Any]] = field(default_factory=dict)
     value_aliases: dict[str, dict[Any, str]] = field(default_factory=dict)
 
@@ -368,11 +377,12 @@ class Plotter:
             key = (key,)
         return ", ".join(f"{self.label_for(col)}={value}" for col, value in zip(cols, key))
     
-    def _series_styles(self, series_keys, series_cols, spec):
+    def _series_styles(self, series_keys, series_cols, spec, *, include_pattern: bool = False):
         hue_cols = self._as_list(spec.hue_by)
         shade_cols = self._as_list(spec.shade_by)
         marker_cols = self._as_list(spec.marker_by)
         linestyle_cols = self._as_list(spec.linestyle_by)
+        pattern_cols = self._as_list(spec.pattern_by) if include_pattern else []
 
         # If user did not specify hue_by, default to first series column
         if not hue_cols and series_cols:
@@ -413,6 +423,10 @@ class Plotter:
             pick_group_value(row_maps[k], linestyle_cols) for k in series_keys
         ) if linestyle_cols else [None]
 
+        pattern_keys = stable_unique(
+            pick_group_value(row_maps[k], pattern_cols) for k in series_keys
+        ) if pattern_cols else [None]
+
         # Base colors
         if spec.base_colors is not None:
             base_color_map = dict(spec.base_colors)
@@ -434,15 +448,29 @@ class Plotter:
         marker_cycle = ["o", "s", "^", "D", "v", "P", "X", "*"]
         linestyle_cycle = ["-", "--", "-.", ":"]
 
-        marker_map = {
-            mk: marker_cycle[i % len(marker_cycle)]
-            for i, mk in enumerate(marker_keys)
-        }
+        if spec.marker_values is not None:
+            marker_map = spec.marker_values
+        else:
+            marker_map = {
+                mk: marker_cycle[i % len(marker_cycle)]
+                for i, mk in enumerate(marker_keys)
+            }
 
         linestyle_map = {
             lk: linestyle_cycle[i % len(linestyle_cycle)]
             for i, lk in enumerate(linestyle_keys)
         }
+
+        if spec.pattern_values is not None:
+            pattern_map = dict(spec.pattern_values)
+        else:
+            pattern_cycle = list(spec.pattern_cycle)
+            if not pattern_cycle:
+                pattern_cycle = [""]
+            pattern_map = {
+                pk: pattern_cycle[i % len(pattern_cycle)]
+                for i, pk in enumerate(pattern_keys)
+            }
 
         styles = {}
         for key in series_keys:
@@ -452,16 +480,22 @@ class Plotter:
             shade_key = pick_group_value(row, shade_cols)
             marker_key = pick_group_value(row, marker_cols)
             linestyle_key = pick_group_value(row, linestyle_cols)
+            pattern_key = pick_group_value(row, pattern_cols)
 
             base = base_color_map[hue_key]
             delta = tone_map.get(shade_key, 0.0)
             color = adjust_tone(base, delta)
 
-            styles[key] = {
+            style = {
                 "color": color,
                 "marker": marker_map.get(marker_key, "o"),
                 "linestyle": linestyle_map.get(linestyle_key, "-") if spec.use_line_styles else "-",
             }
+
+            if include_pattern:
+                style["hatch"] = pattern_map.get(pattern_key, "")
+
+            styles[key] = style
 
         return styles
 
@@ -862,17 +896,27 @@ class Plotter:
                 *self._as_list(style_spec.series_by),
                 *self._as_list(style_spec.hue_by),
                 *self._as_list(style_spec.shade_by),
+                *self._as_list(style_spec.pattern_by),
             ]
         )
 
         style_keys = [self._row_key(row, style_cols) for _, row in plot_df.iterrows()]
         unique_style_keys = self._unique_preserve_order(style_keys)
-        styles = self._series_styles(unique_style_keys, style_cols, style_spec)
+        styles = self._series_styles(
+            unique_style_keys,
+            style_cols,
+            style_spec,
+            include_pattern=True,
+        )
 
         legend_cols = self._as_list(style_spec.series_by)
         if not legend_cols:
             legend_cols = self._unique_preserve_order(
-                [*self._as_list(style_spec.hue_by), *self._as_list(style_spec.shade_by)]
+                [
+                    *self._as_list(style_spec.hue_by),
+                    *self._as_list(style_spec.shade_by),
+                    *self._as_list(style_spec.pattern_by),
+                ]
             )
 
         seen_legend_labels = set()
@@ -899,6 +943,16 @@ class Plotter:
             else:
                 seen_legend_labels.add(legend_label)
 
+            # Hatches are drawn using the patch edge color in Matplotlib.
+            # If a pattern is requested and no explicit edge color was supplied,
+            # use a thin black edge so the pattern survives grayscale printing.
+            hatch = style.get("hatch", "")
+            edgecolor = spec.bar_edgecolor
+            linewidth = spec.bar_linewidth
+            if hatch and edgecolor is None:
+                edgecolor = "black"
+                linewidth = max(linewidth, 0.35)
+
             bars = ax.bar(
                 row["__bar_xpos"],
                 row[spec.y],
@@ -906,8 +960,9 @@ class Plotter:
                 yerr=yerr,
                 capsize=spec.bar_error_capsize if yerr is not None else 0,
                 color=style["color"],
-                edgecolor=spec.bar_edgecolor,
-                linewidth=spec.bar_linewidth,
+                edgecolor=edgecolor,
+                linewidth=linewidth,
+                hatch=hatch,
                 alpha=spec.bar_alpha,
                 label=legend_label,
                 zorder=3,
@@ -1431,3 +1486,121 @@ def add_relative_to_group_x(
     out = out.drop(columns="__baseline_value")
 
     return out
+
+def make_algorithm_stats_table(
+    agg: pd.DataFrame,
+    device: Literal["CPU", "GPU"],
+    *,
+    include_test_name: bool = False,
+    decimals: int = 3,
+) -> pd.DataFrame:
+    """
+    Build a compact algorithm/frequency summary table.
+
+    CPU rows become:
+        Algorithm, device, cpu_frequency_mhz,
+        serial_kernel_runtime_ms, serial_run_power_w,
+        openmp_kernel_runtime_ms, openmp_run_power_w,
+        pocl_kernel_runtime_ms, pocl_run_power_w
+
+    GPU rows become:
+        Algorithm, device, gpu_frequency_mhz,
+        opencl_kernel_runtime_ms, opencl_run_power_w
+    """
+
+    device = device.upper()
+
+    if device not in {"CPU", "GPU"}:
+        raise ValueError("device must be 'CPU' or 'GPU'")
+
+    variant_order = {
+        "CPU": ["Serial", "OpenMP", "PoCL"],
+        "GPU": ["clvk", "OpenCL"],
+    }[device]
+
+    metrics = ["kernel_runtime", "run_power_w"]
+
+    required = [
+        "Algorithm",
+        "frequency_component",
+        "operating_frequency_mhz",
+        "variant",
+        *metrics,
+    ]
+
+    missing = [c for c in required if c not in agg.columns]
+    if missing:
+        raise KeyError(f"Cannot build summary table; missing columns: {missing}")
+
+    work = agg.copy()
+
+    work = work[
+        work["frequency_component"].eq(device)
+        & work["variant"].isin(variant_order)
+    ].copy()
+
+    if work.empty:
+        return pd.DataFrame()
+
+    index_cols = ["Algorithm", "frequency_component", "operating_frequency_mhz"]
+
+    if include_test_name and "test_name" in work.columns:
+        index_cols.insert(1, "test_name")
+
+    table = work.pivot_table(
+        index=index_cols,
+        columns="variant",
+        values=metrics,
+        aggfunc="mean",
+    )
+
+    # Convert from metric-major columns:
+    #   kernel_runtime / Serial
+    # to variant-major columns:
+    #   Serial / kernel_runtime
+    table = table.swaplevel(0, 1, axis=1)
+
+    ordered_cols = [
+        (variant, metric)
+        for variant in variant_order
+        for metric in metrics
+        if (variant, metric) in table.columns
+    ]
+
+    table = table[ordered_cols]
+
+    metric_names = {
+        "kernel_runtime": "kernel_runtime_ms",
+        "run_power_w": "run_power_w",
+    }
+
+    table.columns = [
+        f"{variant.lower()}_{metric_names[metric]}"
+        for variant, metric in table.columns
+    ]
+
+    table = table.reset_index()
+
+    freq_name = "cpu_frequency_mhz" if device == "CPU" else "gpu_frequency_mhz"
+
+    table = table.rename(
+        columns={
+            "frequency_component": "device",
+            "operating_frequency_mhz": freq_name,
+        }
+    )
+
+    # Put columns in the exact readable order.
+    front_cols = ["Algorithm"]
+    if include_test_name and "test_name" in table.columns:
+        front_cols.append("test_name")
+
+    front_cols += ["device", freq_name]
+
+    remaining_cols = [c for c in table.columns if c not in front_cols]
+    table = table[front_cols + remaining_cols]
+
+    numeric_cols = table.select_dtypes(include="number").columns
+    table[numeric_cols] = table[numeric_cols].round(decimals)
+
+    return table.sort_values(front_cols).reset_index(drop=True)

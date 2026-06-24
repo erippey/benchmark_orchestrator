@@ -252,7 +252,7 @@ DERIVED = [
     Metric("operation_count", "Operation Count", "ops", operation_count),
     Metric(
         "flops",
-        "Throughput",
+        "FLOPS",
         "FLOP/s",
         lambda df: df["operation_count"] / (pd.to_numeric(df["total_exec_ms"], errors="coerce") / 1000.0),
         higher_is_better=True,
@@ -302,6 +302,13 @@ def main() -> None:
         mode=SELECTION_MODE,
     )
 
+    bar_pf = select_best_per_group(
+        freq_agg,
+        group_by=["Banks", "algorithm_family", "dev_backend"],
+        value_col="throughput",
+        mode=SELECTION_MODE,
+    )
+
     dimensions = {
         "gpu_freq_mhz": Dimension("gpu_freq_mhz", "GPU Frequency", "MHz"),
         "cpu_freq_mhz": Dimension("cpu_freq_mhz", "CPU Frequency", "MHz"),
@@ -323,6 +330,62 @@ def main() -> None:
             y=BAR_VALUE,
             title="FFT Convolution Efficiency by Backend, Algorithm, and Bank Count",
             output=str(out_dir / "efficiency_bar_best_frequency.png"),
+            bar_group_by="dev_backend",
+            bar_subgroup_by="algorithm_family",
+            bar_label_mode="hierarchical",
+            # bar_brackets="group",
+            # bar_bracket_color="black",
+            # bar_bracket_alpha=0.45,
+            bar_multilevel_bottom=0.30,
+            category_orders={
+                "dev_backend": ["RPi_fftw", "RPi_clfft", "nano_clfft", "nano_cufft"],
+                "algorithm_family": ["OLA", "UPF-OS"],
+                "Banks": [16, 8, 4, 1],
+            },
+            value_aliases={
+                "Banks": {
+                    16: "16",
+                    8: "8",
+                    4: "4",
+                    1: "1",    
+                },
+                "dev_backend": {
+                    "RPi_fftw": "FFTW \N{RIGHTWARDS ARROW} CM5 CPU",
+                    "RPi_clfft": "clFFT \N{RIGHTWARDS ARROW} CM5 GPU",
+                    "nano_clfft": "clFFT \N{RIGHTWARDS ARROW} Orin Nano GPU",
+                    "nano_cufft": "cuFFT \N{RIGHTWARDS ARROW} Orin Nano GPU",
+                },
+            },
+            hue_by="dev_backend",
+            shade_by="algorithm_family",
+            marker_by="algorithm_family",
+
+            base_colors={
+                "nano_cufft": "#54a24b",
+                "nano_clfft": "#7634ac",
+                "RPi_clfft": "#db1916",
+                "RPi_fftw": "#162adb",
+            },
+
+            shade_values={
+                "UPF-OS":-0.35,
+                "OLA": 0.35,
+            },
+            legend="none",
+            legend_fontsize=8,
+            figsize=(10, 3),
+            bar_value_labels=False,
+        ),
+    )
+
+    plotter.plot(
+        bar_pf,
+        PlotSpec(
+            kind="bar",
+            x="Banks",
+            y="throughput",
+            title="FFT Convolution Throughput by Backend, Algorithm, and Bank Count",
+            output=str(out_dir / "throughput_bar_best_frequency.png"),
             bar_group_by="dev_backend",
             bar_subgroup_by="algorithm_family",
             bar_label_mode="hierarchical",
