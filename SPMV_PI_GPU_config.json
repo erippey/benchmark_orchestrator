@@ -27,7 +27,7 @@
   "tests": [
     {
       "name": "SPMV-OpenCL-PI",
-      "executable": "nice -20 ./csr -v -i csrmatrix_R1_N65536_N5000_S05 -k src/spmv_kernel -j 75",
+      "executable": "nice -20 ./csr -v -i csrmatrix_R1_N65536_D5000_S05 -k src/spmv_kernel -j 75",
       "governor": "performance",
       "fixed_config": {
         "core_freq": 910,

@@ -26,7 +26,7 @@
   },
   "tests": [
     {
-      "name": "KMeams-PoCL-RPI",
+      "name": "KMeans-PoCL-RPI",
       "executable": "nice -20 ./kmeans_cpu -o false -f ../../data/kmeans/kdd_cup -i 8",
       "governor": "performance",
       "fixed_config": {

@@ -7,7 +7,7 @@ def load_config(path):
         return json.load(f)
 
 
-def expand_tests(cfg):
+def expand_tests(cfg, one_off=False):
 
     expanded = []
 
@@ -15,8 +15,15 @@ def expand_tests(cfg):
 
         sweep = test["sweep"]
         var = sweep["var"]
+        values = sweep["values"]
 
-        for val in sweep["values"]:
+        if one_off:
+            if not values:
+                raise ValueError(f"One-off run requested, but test '{test['name']}' has an empty sweep")
+
+            values = values[:1]
+
+        for val in values:
 
             run_cfg = dict(test["fixed_config"])
             run_cfg[var] = val
@@ -28,8 +35,9 @@ def expand_tests(cfg):
                 "config": run_cfg,
                 "independant_var": var,
                 "tag_fields": test["tag_fields"],
-                "iterations": test["total_iterations"],
-                "max_runtime_sec": test["max_runtime_sec"]
+                "iterations": 1 if one_off else test["total_iterations"],
+                "max_runtime_sec": test["max_runtime_sec"],
+                "one_off": one_off
             })
 
     return expanded
