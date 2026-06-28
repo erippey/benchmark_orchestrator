@@ -4,6 +4,8 @@ import shlex
 import tempfile
 from pathlib import Path
 
+from orchestrator.RuntimeMetadataMixin import RuntimeMetadataMixin
+
 
 AVAILABLE_CPU_FREQS_LITTLE = [
     408000, 600000, 816000, 1008000,
@@ -111,6 +113,7 @@ class OPI5DeviceManager:
         self.client = ssh_client
         self.cfg = config
         self.device_name = "Orange Pi 5 Ultra"
+        self.runtime_manager = RockchipRuntimeMetadataMixin(self)
 
     def set_ssh_client(self, ssh_client):
         self.client = ssh_client
@@ -253,6 +256,9 @@ class OPI5DeviceManager:
         with open(root_dir / "config_metadata.txt", "w") as meta_file:
             for line in metadata:
                 meta_file.write(f"{line}\n")
+
+    def save_runtime_metadata(self, params, root_dir, date):
+        self.runtime_manager.save_runtime_metadata(params, root_dir, date)
 
     def apply_config(self, params):
         """
@@ -484,3 +490,47 @@ class OPI5DeviceManager:
             new_text.append("<none>")
 
         return "\n".join(new_text) + "\n"
+
+
+class RockchipRuntimeMetadataMixin(RuntimeMetadataMixin):
+    def _sample_device_specific_runtime_metadata(self):
+        data = {}
+
+        # Generic devfreq usually catches:
+        #   fb000000.gpu
+        #   dmc
+        #   fdab0000.npu / rknpu
+        #
+        # This hook is mostly for extra aliases if names vary by kernel.
+
+        for path in self._glob("/sys/class/devfreq/*"):
+            name = path.split("/")[-1]
+            lower = name.lower()
+
+            cur = self._read_devfreq_khz(f"{path}/cur_freq")
+            min_freq = self._read_devfreq_khz(f"{path}/min_freq")
+            max_freq = self._read_devfreq_khz(f"{path}/max_freq")
+            governor = self._read_text(f"{path}/governor")
+
+            if not cur:
+                continue
+
+            if "gpu" in lower or "mali" in lower:
+                data["gpu_cur_khz"] = cur
+                data["gpu_min_khz"] = min_freq
+                data["gpu_max_khz"] = max_freq
+                data["gpu_governor"] = governor
+                data["gpu_source"] = name
+
+            elif "dmc" in lower or "ddr" in lower or "dram" in lower:
+                data["memory_cur_khz"] = cur
+                data["memory_min_khz"] = min_freq
+                data["memory_max_khz"] = max_freq
+                data["memory_governor"] = governor
+                data["memory_source"] = name
+
+            elif "npu" in lower or "rknpu" in lower:
+                data["npu_cur_khz"] = cur
+                data["npu_source"] = name
+
+        return data
