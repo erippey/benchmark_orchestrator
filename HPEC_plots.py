@@ -6,7 +6,7 @@ from typing import Literal, Sequence
 import numpy as np
 import pandas as pd
 
-from graph_tool_v2_series_bar import (
+from graph_tool_v2_panels import (
     BenchmarkData,
     Dimension,
     Metric,
@@ -289,9 +289,10 @@ def main() -> None:
         yscale="log",
         ylabel="Kernel Energy Consumption (J)",
 
-        figsize=(8,4),
+        figsize=(6,4),
 
-        title="Kernel Energy Consumption vs Average Power Draw for All Algorithm Variants",
+        title="Kernel Energy Consumption vs Average Power Draw by Algorithm and Variant",
+        title_wrap=50,
         output="graphs/HPEC/energy_by_power.png",
 
         series_by=["Algorithm", "variant"],
@@ -323,7 +324,7 @@ def main() -> None:
         },
 
         legend="outside_right",
-        legend_fontsize=8,
+        legend_fontsize=6,
     ))
 
 
@@ -374,6 +375,106 @@ def main() -> None:
     ))
 
 
+    plotter.plot_panels(
+        [
+            (agg, PlotSpec(
+                kind="scatter",
+                x="run_power_w",
+                xlabel="Average Power (W)",
+                y="kernel_runtime",
+                ylabel="Kernel Runtime (ms)",
+                yscale="log",
+
+                figsize=(8,4),
+
+                title="",
+                output="NaN",
+
+                series_by=["Algorithm", "variant"],
+                    
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="outside_right",
+                legend_fontsize=8,
+            )),
+            (agg, PlotSpec(
+                kind="scatter",
+                x="run_power_w",
+                xlabel="Average Power (W)",
+                y="energy_j",
+                yscale="log",
+                ylabel="Kernel Energy Consumption (J)",
+
+                figsize=(10,4),
+
+                title="",
+                output="NaN",
+
+                series_by=["Algorithm", "variant"],
+                
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="outside_right",
+                legend_fontsize=8,
+            ))
+        ],
+        title="Kernel Runtime and Kernel Runtime Energy vs Average Power Consumption by Algorithm and Variant",
+        output="graphs/HPEC/runtime_energy_by_power.png",
+        figsize=(10, 4),
+        sharey=False,
+        legend="right",
+        legend_ncol=4,  
+        dpi=400
+    )
+
 
 
     bar_df = select_best_per_group(
@@ -395,13 +496,24 @@ def main() -> None:
         yscale="log",
 
         bar_group_by="Algorithm",
-        bar_group_gap=1.15,
-        bar_subgroup_gap=0.1,
+        bar_subgroup_by="impl_class",
+
+        bar_show_subgroup_labels=False,
+        bar_show_group_labels=True,
+
+        bar_group_gap=0.8,
+        bar_subgroup_gap=0.5,
         bar_width=0.72,
-        bar_multilevel_bottom=0.32,
+
+        bar_value_fontsize=12,
+        bar_subgroup_label_fontsize=10,
+
+        # You can probably reduce this now because one label row is gone.
+        bar_multilevel_bottom=0.30,
 
         category_orders={
             "Algorithm": ["BFS", "FFT", "KMeans", "SRAD", "SPMV"],
+            "impl_class": ["CPU", "GPU"],
             "variant": ["Serial", "OpenMP", "PoCL", "clvk"],
         },
 
@@ -418,9 +530,10 @@ def main() -> None:
             },
         },
 
-        figsize=(12, 9),
+        figsize=(12, 5),
 
         title="Kernel Energy Consumption by Algorithm and Variant",
+        title_fontsize=22,
         output="graphs/HPEC/energy_by_algorithm_variant.png",
 
         hue_by="Algorithm",
@@ -442,13 +555,6 @@ def main() -> None:
             "Serial": 0.35,
         },
 
-        marker_values={
-            "Serial": "s",
-            "OpenMP": "^",
-            "PoCL": "D",
-            "clvk": "o"
-        },
-
         pattern_values={
             "Serial": "",
             "OpenMP": "//",
@@ -460,8 +566,112 @@ def main() -> None:
         bar_linewidth=0.4,
 
         legend="none",
-        legend_fontsize=8,
+        legend_fontsize=10,
     ))
+
+    plotter.plot_panels(
+        [
+            (dev_data["GPU"], PlotSpec(
+                kind="line",
+                x="operating_frequency_mhz",
+                xlabel="GPU Frequency (MHz)",
+                y="run_power_w",
+                ylabel="Average Power Draw (W)",
+
+                figsize=(5,4),
+
+                title="Average Power Consumtion vs GPU Frequency",
+                title_fontsize=10,
+                output="graphs/HPEC/opencl_power_by_gpu_freq.png",
+
+                series_by=["Algorithm", "variant"],
+
+                highlight_lowest_by=["Algorithm"],
+
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="none",
+                legend_fontsize=8,
+            )),
+            (dev_data["CPU"], PlotSpec(
+                kind="line",
+                x="operating_frequency_mhz",
+                xlabel="CPU Frequency (MHz)",
+                y="run_power_w",
+                ylabel="Average Power Draw (W)",
+
+                figsize=(5,4),
+
+                title="Average Power Consumtion vs CPU Frequency",
+                title_fontsize=10,
+                output="graphs/HPEC/openmp_power_by_cpu_freq.png",
+
+                series_by=["Algorithm", "variant"],
+
+                highlight_lowest_by=["Algorithm", "variant"],
+                highlight_lowest_label="Lowest Power",
+
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="none",
+                legend_fontsize=8,
+            ))
+        ],
+        output="graphs/HPEC/power_by_frequency_cpu_gpu.png",
+        figsize=(10, 4),
+        sharey=False,
+        legend="right",
+        legend_ncol=4,  
+        dpi=400
+    )
 
 
 
@@ -519,9 +729,9 @@ def main() -> None:
         y="run_power_w",
         ylabel="Average Power Draw (W)",
 
-        figsize=(8,4),
+        figsize=(5,4),
 
-        title="clvk Average Power Consumtion vs GPU Frequency",
+        title="Average Power Consumtion vs GPU Frequency",
         output="graphs/HPEC/opencl_power_by_gpu_freq.png",
 
         series_by=["Algorithm", "variant"],
@@ -555,7 +765,7 @@ def main() -> None:
             "clvk": "o"
         },
 
-        legend="outside_right",
+        legend="none",
         legend_fontsize=8,
     ))
 
@@ -663,9 +873,9 @@ def main() -> None:
         y="run_power_w",
         ylabel="Average Power Draw (W)",
 
-        figsize=(8,4),
+        figsize=(5,4),
 
-        title="CPU Average Power Consumtion vs CPU Frequency",
+        title="Average Power Consumtion vs CPU Frequency",
         output="graphs/HPEC/openmp_power_by_cpu_freq.png",
 
         series_by=["Algorithm", "variant"],
@@ -699,7 +909,7 @@ def main() -> None:
             "clvk": "o"
         },
 
-        legend="outside_right",
+        legend="none",
         legend_fontsize=8,
     ))
 

@@ -156,7 +156,7 @@ DERIVED = [
         higher_is_better=False,
     ),
     Metric("algorithm_family", "Algorithm", "", algorithm_family),
-    Metric("dev_backend", "Device + Backend", "", device_backend),
+    Metric("dev_backend", "Variant", "", device_backend),
     Metric("operation_count", "Operation Count", "ops", operation_count),
     Metric(
         "flops",
@@ -227,6 +227,13 @@ def smw_plot(bank_count: int = 0) -> None:
 
     rpi_gpu = gpu.where(Device="RaspberryPiComputeModule5")
 
+    all = data.aggregate(
+        ["Device", "algorithm_family", "dev_backend", "gpu_freq_mhz"],
+        ["mflops_per_w", "throughput", "run_power_w", "conv_avg_ms"],
+        aggregator="mean",
+        include_std=True,
+    )
+
     gpu_agg = gpu.aggregate(
         ["Device", "algorithm_family", "dev_backend", "gpu_freq_mhz"],
         ["mflops_per_w", "throughput", "run_power_w", "conv_avg_ms"],
@@ -258,6 +265,55 @@ def smw_plot(bank_count: int = 0) -> None:
     }
     metrics = {m.name: m for m in DERIVED}
     plotter = Plotter(dimensions, metrics)
+
+
+    plotter.plot(
+        all,
+        PlotSpec(
+            kind="line",
+
+            x="gpu_freq_mhz",
+            xlabel_fontsize=14,
+            y="mflops_per_w",
+            ylabel_fontsize=14,
+            yerr="mflops_per_w_std",
+            series_by=["algorithm_family", "dev_backend"],
+
+            #ylim=(120, 1900),
+
+
+            hue_by="dev_backend",
+            shade_by="algorithm_family",
+            marker_by="algorithm_family",
+
+            base_colors={
+                "nano-cufft": "#54a24b",
+                "nano-clfft": "#7634ac",
+                "RPi-clfft": "#db1916",
+                "RPi-fftw": "#162adb",
+                "RaspberryPiComputeModule5": "#162adb",
+            },
+
+            shade_values={
+                "UPF-OS":-0.35,
+                "OLA": 0.35,
+            },
+
+
+            title=plot_title("GPU Frequency vs Convolution Efficiency"),
+            title_fontsize=10,
+            output=out_file("aggregate.png"),
+
+            legend="outside_right",
+
+
+            highlight_highest_by=["dev_backend", "algorithm_family"],
+            highlight_highest_label="Lowest Power",
+            highlight_linewidth=1.5,
+            highlight_size=95,
+            highlight_alpha=1,
+        ),
+    )
 
     plotter.plot(
         gpu_agg,
@@ -358,12 +414,13 @@ def smw_plot(bank_count: int = 0) -> None:
             kind="line",
 
             x="gpu_freq_mhz",
-            xlabel_fontsize=14,
+            xlabel_fontsize=12,
             y="run_power_w",
             ylabel="Average Power (W)",
-            ylabel_fontsize=14,
+            ylabel_fontsize=12,
             yerr="run_power_w_std",
             series_by=["algorithm_family", "dev_backend"],
+            figsize=(5,3),
 
             #ylim=(120, 1900),
 
@@ -499,12 +556,13 @@ def smw_plot(bank_count: int = 0) -> None:
             kind="line",
 
             x="gpu_freq_mhz",
-            xlabel_fontsize=14,
+            xlabel_fontsize=12,
             y="run_power_w",
             ylabel="Average Power (W)",
-            ylabel_fontsize=14,
+            ylabel_fontsize=12,
             yerr="run_power_w_std",
             series_by=["algorithm_family", "dev_backend"],
+            figsize=(5,2),
 
             #ylim=(120, 1900),
 
@@ -640,12 +698,13 @@ def smw_plot(bank_count: int = 0) -> None:
 
 
             x="cpu_freq_mhz",
-            xlabel_fontsize=14,
+            xlabel_fontsize=12,
             y="run_power_w",
             ylabel="Average Power (W)",
-            ylabel_fontsize=14,
+            ylabel_fontsize=12,
             yerr="run_power_w_std",
             series_by=["Device", "algorithm_family"],
+            figsize=(5,2),
 
             #ylim=(75, 1500),
 
@@ -686,7 +745,7 @@ def smw_plot(bank_count: int = 0) -> None:
 
 
 def main() -> None:
-    smw_plot(8)
+    smw_plot(16)
 
 if __name__ == "__main__":
     main()

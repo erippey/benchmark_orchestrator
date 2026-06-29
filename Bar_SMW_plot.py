@@ -429,7 +429,7 @@ def main() -> None:
             },
             legend="none",
             legend_fontsize=8,
-            figsize=(10, 3),
+            figsize=(10, 5),
             bar_value_labels=False,
         ),
     )
