@@ -26,8 +26,8 @@
   },
   "tests": [
     {
-      "name": "BFS-OpenMP-PI-serial",
-      "executable": "nice -20 ./bfs_serial -f ../../data/bfs/graph8M.txt -i 2000",
+      "name": "BFS-serial-PI",
+      "executable": "nice -20 ./bfs_serial -f ../../data/bfs/graph8M.txt -i 3",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
@@ -39,7 +39,27 @@
       },
       "sweep": {
         "var": "arm_freq",
-        "values": [1500]
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "BFS-OpenMP-PI4",
+      "executable": "nice -20 ./bfs -f ../../data/bfs/graph8M.txt -i 7 -t 4",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
       },
       "total_iterations": 6,
       "tag_fields": ["arm_freq"],
