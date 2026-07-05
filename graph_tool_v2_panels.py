@@ -252,10 +252,10 @@ class PlotSpec:
     bar_show_subgroup_labels: bool = True
 
     xscale: str = "linear"
-    xlabel: Optional[str] = None
+    xlabel: Optional[str] = ""
     xlabel_fontsize: int = 12
     yscale: str = "linear"
-    ylabel: Optional[str] = None
+    ylabel: Optional[str] = ""
     ylabel_fontsize: int = 12
 
     xlim: tuple[int, int] = None
@@ -267,6 +267,8 @@ class PlotSpec:
     legend: str = "outside_right"
     legend_ncol: Optional[int] = None
     legend_fontsize: int = 8
+    legend_style: Optional[Literal["full", "values"]] = "full"
+    legend_separator: Optional[str] = "-"
 
     title_wrap: int = 72
     title_fontsize: int = 15
@@ -511,6 +513,21 @@ class Plotter:
         handles, labels = ax.get_legend_handles_labels()
         if not handles:
             return
+        
+        formatted_labels = []
+        
+        for handle, label in zip(handles, labels):
+                if not label or label.startswith("_"):
+                    continue
+
+                formatted_labels.append(self._format_legend_label(
+                    label,
+                    style=spec.legend_style,
+                    sep=spec.legend_separator,
+                ))
+
+        
+
 
         # Shared legend kwargs
         legend_kwargs = {
@@ -522,7 +539,7 @@ class Plotter:
         if spec.legend == "outside_right":
             ax.legend(
                 handles,
-                labels,
+                formatted_labels,
                 loc="center left",
                 bbox_to_anchor=(1.02, 0.5),
                 **legend_kwargs,
@@ -532,7 +549,7 @@ class Plotter:
         if spec.legend == "outside_left":
             ax.legend(
                 handles,
-                labels,
+                formatted_labels,
                 loc="center right",
                 bbox_to_anchor=(-0.02, 0.5),
                 **legend_kwargs,
@@ -542,11 +559,11 @@ class Plotter:
         if spec.legend == "bottom":
             ncol = spec.legend_ncol
             if ncol is None:
-                ncol = min(4, max(1, len(labels)))
+                ncol = min(4, max(1, len(formatted_labels)))
 
             ax.legend(
                 handles,
-                labels,
+                formatted_labels,
                 loc="upper center",
                 bbox_to_anchor=(0.5, -0.18),
                 ncol=ncol,
@@ -561,7 +578,7 @@ class Plotter:
 
             ax.legend(
                 handles,
-                labels,
+                formatted_labels,
                 loc="lower center",
                 bbox_to_anchor=(0.5, 1.02),
                 ncol=ncol,
@@ -601,7 +618,7 @@ class Plotter:
 
         ax.legend(
             handles,
-            labels,
+            formatted_labels,
             loc=loc,
             **legend_kwargs,
         )
@@ -627,13 +644,29 @@ class Plotter:
         rendering code can be used for both normal single-plot figures and
         multi-panel figures.
         """
+        if (spec.xlabel is None):
+            xlabel = None
+        elif len(spec.xlabel) == 0:
+            xlabel = self.label_for(spec.x)
+        else:
+            xlabel = spec.xlabel
+
+        if (spec.ylabel is None):
+            ylabel = None
+        elif len(spec.ylabel) == 0:
+            ylabel = self.label_for(spec.y)
+        else:
+            ylabel = spec.ylabel
+
         if spec.kind != "bar":
-            ax.set_xlabel(spec.xlabel or self.label_for(spec.x), fontsize=spec.xlabel_fontsize)
+            if (xlabel):
+                ax.set_xlabel(xlabel, fontsize=spec.xlabel_fontsize)
             if spec.xlim is not None:
                 ax.set_xlim(spec.xlim)
             ax.set_xscale(spec.xscale)
 
-        ax.set_ylabel(spec.ylabel or self.label_for(spec.y), fontsize=spec.ylabel_fontsize)
+        if (ylabel):
+            ax.set_ylabel(ylabel, fontsize=spec.ylabel_fontsize)
         ax.set_yscale(spec.yscale)
         if spec.ylim is not None:
             ax.set_ylim(spec.ylim)
@@ -650,22 +683,76 @@ class Plotter:
         plt.savefig(spec.output, dpi=spec.dpi, bbox_inches="tight")
         plt.close(fig)
 
-    def _dedupe_legend(self, axes) -> tuple[list[Any], list[str]]:
+
+    def _format_legend_label(
+        self,
+        label: str,
+        *,
+        style: Literal["full", "values"] = "full",
+        sep: str = "-",
+    ) -> str:
+        """Format a legend label.
+
+        Examples
+        --------
+        full:
+            "Algorithm=BFS, Variant=OpenMP"
+
+        values:
+            "BFS-OpenMP"
+        """
+        if style == "full":
+            return label
+
+        if style == "values":
+            # Match comma-separated key=value pairs.
+            # Example: "Algorithm=BFS, Variant=OpenMP"
+            parts = [part.strip() for part in label.split(",")]
+
+            values: list[str] = []
+            for part in parts:
+                if "=" not in part:
+                    # Fall back gracefully for labels that are not key=value.
+                    values.append(part)
+                    continue
+
+                _, value = part.split("=", 1)
+                values.append(value.strip())
+
+            return sep.join(values)
+
+        raise ValueError(f"Unknown legend label style: {style}")
+
+    def _dedupe_legend(
+        self,
+        axes,
+        *,
+        label_style: Literal["full", "values"] = "full",
+        label_sep: str = "-",
+    ) -> tuple[list[Any], list[str]]:
         """Collect unique legend entries from one or more axes.
 
         Matplotlib creates duplicate legend entries when each panel draws the
-        same series. This helper keeps the first handle for each label and
-        ignores internal/private labels such as `_nolegend_`.
+        same series. This helper keeps the first handle for each formatted label
+        and ignores internal/private labels such as `_nolegend_`.
         """
         by_label: dict[str, Any] = {}
 
         for ax in axes:
             handles, labels = ax.get_legend_handles_labels()
+
             for handle, label in zip(handles, labels):
                 if not label or label.startswith("_"):
                     continue
-                if label not in by_label:
-                    by_label[label] = handle
+
+                formatted_label = self._format_legend_label(
+                    label,
+                    style=label_style,
+                    sep=label_sep,
+                )
+
+                if formatted_label not in by_label:
+                    by_label[formatted_label] = handle
 
         return list(by_label.values()), list(by_label.keys())
 
@@ -677,12 +764,16 @@ class Plotter:
         legend: str,
         legend_ncol: Optional[int],
         legend_fontsize: int,
+        legend_label_style: Literal["full", "values"] = "full",
+        legend_label_sep: str = "-",
     ) -> None:
         """Apply one merged legend to an entire multi-panel figure."""
         if legend == "none":
             return
 
-        handles, labels = self._dedupe_legend(axes)
+        handles, labels = self._dedupe_legend(axes,
+                            label_style=legend_label_style, 
+                            label_sep=legend_label_sep)
         if not handles:
             return
 
@@ -742,9 +833,119 @@ class Plotter:
             return
 
         raise ValueError("figure legend must be one of: right, left, bottom, top, none")
+    
+    def _normalize_column_labels(self, labels, ncols: int) -> dict[int, str]:
+        """
+        Normalize a column-label input into {column_index: label}.
+
+        Accepted forms:
+            None
+            "same label for every column"
+            ["label col 0", "label col 1", None, ...]
+            {0: "label col 0", 1: "label col 1"}
+        """
+        if labels is None:
+            return {}
+
+        if isinstance(labels, str):
+            return {i: labels for i in range(ncols)}
+
+        if isinstance(labels, dict):
+            return {
+                int(col): label
+                for col, label in labels.items()
+                if label is not None
+            }
+
+        out = {}
+        for i, label in enumerate(labels):
+            if i >= ncols:
+                break
+            if label is not None:
+                out[i] = label
+
+        return out
+
+
+    def _add_column_labels(
+        self,
+        fig,
+        axes_grid,
+        *,
+        nrows: int,
+        ncols: int,
+        n_panels: int,
+        column_xlabels=None,
+        column_ylabels=None,
+        xlabel_fontsize: int = 12,
+        ylabel_fontsize: int = 12,
+        xlabel_pad: float = 0.045,
+        ylabel_pad: float = 0.055,
+    ) -> None:
+        """
+        Add one x/y label per subplot column.
+
+        Labels are positioned from the visible axes in each column, so this also
+        works for incomplete grids.
+        """
+        xlabels = self._normalize_column_labels(column_xlabels, ncols)
+        ylabels = self._normalize_column_labels(column_ylabels, ncols)
+
+        if not xlabels and not ylabels:
+            return
+
+        # Make sure constrained_layout has computed final-ish axes positions.
+        fig.canvas.draw()
+
+        for col in range(ncols):
+            col_axes = []
+
+            for row in range(nrows):
+                flat_idx = row * ncols + col
+                if flat_idx >= n_panels:
+                    continue
+
+                ax = axes_grid[row][col]
+                if ax.get_visible():
+                    col_axes.append(ax)
+
+            if not col_axes:
+                continue
+
+            boxes = [ax.get_position() for ax in col_axes]
+
+            left = min(box.x0 for box in boxes)
+            right = max(box.x1 for box in boxes)
+            bottom = min(box.y0 for box in boxes)
+            top = max(box.y1 for box in boxes)
+
+            x_center = 0.5 * (left + right)
+            y_center = 0.5 * (bottom + top)
+
+            if col in xlabels:
+                fig.text(
+                    x_center,
+                    bottom - xlabel_pad,
+                    xlabels[col],
+                    ha="center",
+                    va="top",
+                    fontsize=xlabel_fontsize,
+                )
+
+            if col in ylabels:
+                fig.text(
+                    left - ylabel_pad,
+                    y_center,
+                    ylabels[col],
+                    ha="right",
+                    va="center",
+                    rotation="vertical",
+                    fontsize=ylabel_fontsize,
+                )
 
     def _draw_on_axes(self, ax, df: pd.DataFrame, spec: PlotSpec) -> None:
         """Draw a PlotSpec onto an existing axes without saving/closing."""
+
         if spec.kind == "line":
             self._draw_line(ax, df, spec)
         elif spec.kind == "scatter":
@@ -769,11 +970,34 @@ class Plotter:
         sharex: bool = False,
         sharey: bool = False,
         legend: str = "right",
+        legend_style: Literal["full", "values"] = "full",
+        legend_seperator: str = "-",
         legend_ncol: Optional[int] = None,
         legend_fontsize: Optional[int] = None,
         title_fontsize: Optional[int] = None,
         title_wrap: int = 92,
         hide_repeated_ylabels: bool = True,
+
+        column_gap: Optional[float] = None,
+        row_gap: Optional[float] = None,
+        layout_w_pad: Optional[float] = None,
+        layout_h_pad: Optional[float] = None,
+
+        shared_xlabel: Optional[str] = None,
+        shared_ylabel: Optional[str] = None,
+        shared_xlabel_fontsize: Optional[int] = None,
+        shared_ylabel_fontsize: Optional[int] = None,
+        hide_panel_xlabels_when_shared: bool = True,
+        hide_panel_ylabels_when_shared: bool = True,
+
+        column_xlabels: Optional[Union[str, Sequence[Optional[str]], dict[int, str]]] = None,
+        column_ylabels: Optional[Union[str, Sequence[Optional[str]], dict[int, str]]] = None,
+        column_xlabel_fontsize: Optional[int] = None,
+        column_ylabel_fontsize: Optional[int] = None,
+        column_xlabel_pad: float = 0.045,
+        column_ylabel_pad: float = 0.055,
+        hide_panel_xlabels_with_column_labels: bool = True,
+        hide_panel_ylabels_with_column_labels: bool = True,
     ) -> None:
         """Render multiple PlotSpecs into one figure with one merged legend.
 
@@ -827,18 +1051,61 @@ class Plotter:
             layout="constrained",
         )
 
+        if (
+            column_gap is not None
+            or row_gap is not None
+            or layout_w_pad is not None
+            or layout_h_pad is not None
+        ):
+            wspace = 0.02 if column_gap is None else column_gap
+            hspace = 0.02 if row_gap is None else row_gap
+            w_pad = 0.04167 if layout_w_pad is None else layout_w_pad
+            h_pad = 0.04167 if layout_h_pad is None else layout_h_pad
+
+            # Newer Matplotlib layout-engine API.
+            engine = fig.get_layout_engine()
+            if engine is not None and hasattr(engine, "set"):
+                engine.set(
+                    wspace=wspace,
+                    hspace=hspace,
+                    w_pad=w_pad,
+                    h_pad=h_pad,
+                )
+            else:
+                # Older Matplotlib fallback.
+                fig.set_constrained_layout_pads(
+                    wspace=wspace,
+                    hspace=hspace,
+                    w_pad=w_pad,
+                    h_pad=h_pad,
+                )
+
         axes_arr = np.atleast_1d(axes).ravel().tolist()
+        axes_grid = np.asarray(axes, dtype=object).reshape(nrows, ncols)
 
         for ax, (df, spec) in zip(axes_arr, panels):
             # Panel specs should never create their own legends or save files.
             # The figure-level legend and output path are handled here.
-            panel_spec = replace(spec, legend="none", output=output)
+            panel_spec = replace(spec, output=output)
 
             panel_title = "\n".join(textwrap.wrap(panel_spec.title, width=panel_spec.title_wrap))
             ax.set_title(panel_title, fontsize=panel_spec.title_fontsize)
 
+            if shared_xlabel is not None and hide_panel_xlabels_when_shared:
+                panel_spec.xlabel = None
+
+            if shared_ylabel is not None and hide_panel_ylabels_when_shared:
+                panel_spec.ylabel = None
+
+            if column_xlabels is not None and hide_panel_xlabels_with_column_labels:
+                panel_spec.xlabel = None
+
+            if column_ylabels is not None and hide_panel_ylabels_with_column_labels:
+                panel_spec.ylabel = None
+
             self._draw_on_axes(ax, df, panel_spec)
             self._format_axes(ax, panel_spec)
+            self._apply_legend(fig, ax, panel_spec)
 
         # Hide any unused axes in an incomplete grid.
         for ax in axes_arr[n_panels:]:
@@ -855,6 +1122,40 @@ class Plotter:
             legend=legend,
             legend_ncol=legend_ncol,
             legend_fontsize=legend_fontsize,
+            legend_label_style=legend_style,
+            legend_label_sep=legend_seperator,
+        )
+
+        if shared_xlabel is not None:
+            if shared_xlabel_fontsize is None:
+                shared_xlabel_fontsize = panels[0][1].xlabel_fontsize
+
+            fig.supxlabel(shared_xlabel, fontsize=shared_xlabel_fontsize)
+
+        if shared_ylabel is not None:
+            if shared_ylabel_fontsize is None:
+                shared_ylabel_fontsize = panels[0][1].ylabel_fontsize
+
+            fig.supylabel(shared_ylabel, fontsize=shared_ylabel_fontsize)
+
+        if column_xlabel_fontsize is None:
+            column_xlabel_fontsize = panels[0][1].xlabel_fontsize
+
+        if column_ylabel_fontsize is None:
+            column_ylabel_fontsize = panels[0][1].ylabel_fontsize
+
+        self._add_column_labels(
+            fig,
+            axes_grid,
+            nrows=nrows,
+            ncols=ncols,
+            n_panels=n_panels,
+            column_xlabels=column_xlabels,
+            column_ylabels=column_ylabels,
+            xlabel_fontsize=column_xlabel_fontsize,
+            ylabel_fontsize=column_ylabel_fontsize,
+            xlabel_pad=column_xlabel_pad,
+            ylabel_pad=column_ylabel_pad,
         )
 
         if title is not None:

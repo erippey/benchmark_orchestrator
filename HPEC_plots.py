@@ -377,20 +377,20 @@ def main() -> None:
 
     plotter.plot_panels(
         [
-            (agg, PlotSpec(
+            (agg.loc[agg["Algorithm"].eq("BFS")].copy(), PlotSpec(
                 kind="scatter",
                 x="run_power_w",
-                xlabel="Average Power (W)",
+                xlabel=None,
                 y="kernel_runtime",
-                ylabel="Kernel Runtime (ms)",
+                ylabel=None,
                 yscale="log",
 
-                figsize=(8,4),
+                figsize=(6,4),
 
                 title="",
                 output="NaN",
 
-                series_by=["Algorithm", "variant"],
+                series_by=["Algorithm", "variant", "frequency_component"],
                     
                 hue_by="Algorithm",
                 shade_by="variant",
@@ -418,23 +418,24 @@ def main() -> None:
                     "clvk": "o"
                 },
 
-                legend="outside_right",
+                legend="top_right",
                 legend_fontsize=8,
+                legend_style="values",
             )),
-            (agg, PlotSpec(
+            (agg.loc[agg["Algorithm"].eq("BFS")].copy(), PlotSpec(
                 kind="scatter",
                 x="run_power_w",
-                xlabel="Average Power (W)",
+                xlabel=None,
                 y="energy_j",
                 yscale="log",
-                ylabel="Kernel Energy Consumption (J)",
+                ylabel=None,
 
-                figsize=(10,4),
+                figsize=(6,4),
 
                 title="",
                 output="NaN",
 
-                series_by=["Algorithm", "variant"],
+                series_by=["Algorithm", "variant", "frequency_component"],
                 
                 hue_by="Algorithm",
                 shade_by="variant",
@@ -462,17 +463,398 @@ def main() -> None:
                     "clvk": "o"
                 },
 
-                legend="outside_right",
+                legend="top_right",
                 legend_fontsize=8,
-            ))
+                legend_style="values",
+            )),
+            (agg.loc[agg["Algorithm"].eq("FFT")].copy(), PlotSpec(
+                kind="scatter",
+                x="run_power_w",
+                xlabel=None,
+                y="kernel_runtime",
+                ylabel=None,
+                yscale="log",
+
+                figsize=(6,4),
+
+                title="",
+                output="NaN",
+
+                series_by=["Algorithm", "variant", "frequency_component"],
+                    
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_right",
+                legend_fontsize=8,
+                legend_style="values",
+            )),
+            (agg.loc[agg["Algorithm"].eq("FFT")].copy(), PlotSpec(
+                kind="scatter",
+                x="run_power_w",
+                xlabel=None,
+                y="energy_j",
+                yscale="log",
+                ylabel=None,
+
+                figsize=(6,4),
+
+                title="",
+                output="NaN",
+
+                series_by=["Algorithm", "variant", "frequency_component"],
+                
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_right",
+                legend_fontsize=8,
+                legend_style="values",
+            )),
+            (agg.loc[agg["Algorithm"].eq("KMeans")].copy(), PlotSpec(
+                kind="scatter",
+                x="run_power_w",
+                xlabel=None,
+                y="kernel_runtime",
+                ylabel=None,
+                yscale="log",
+
+                figsize=(6,4),
+
+                title="",
+                output="NaN",
+
+                series_by=["Algorithm", "variant", "frequency_component"],
+                    
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_right",
+                legend_fontsize=8,
+                legend_style="values",
+            )),
+            (agg.loc[agg["Algorithm"].eq("KMeans")].copy(), PlotSpec(
+                kind="scatter",
+                x="run_power_w",
+                xlabel=None,
+                y="energy_j",
+                yscale="log",
+                ylabel=None,
+
+                figsize=(6,4),
+
+                title="",
+                output="NaN",
+
+                series_by=["Algorithm", "variant", "frequency_component"],
+                
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_right",
+                legend_fontsize=8,
+                legend_style="values",
+            )),
+            (agg.loc[agg["Algorithm"].eq("SRAD")].copy(), PlotSpec(
+                kind="scatter",
+                x="run_power_w",
+                xlabel=None,
+                y="kernel_runtime",
+                ylabel=None,
+                yscale="log",
+
+                figsize=(6,4),
+
+                title="",
+                output="NaN",
+
+                series_by=["Algorithm", "variant", "frequency_component"],
+                    
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_right",
+                legend_fontsize=8,
+                legend_style="values",
+            )),
+            (agg.loc[agg["Algorithm"].eq("SRAD")].copy(), PlotSpec(
+                kind="scatter",
+                x="run_power_w",
+                xlabel=None,
+                y="energy_j",
+                yscale="log",
+                ylabel=None,
+
+                figsize=(6,4),
+
+                title="",
+                output="NaN",
+
+                series_by=["Algorithm", "variant", "frequency_component"],
+                
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_right",
+                legend_fontsize=8,
+                legend_style="values",
+            )),
+            (agg.loc[agg["Algorithm"].eq("SPMV")].copy(), PlotSpec(
+                kind="scatter",
+                x="run_power_w",
+                xlabel="Average Power (W)",
+                y="kernel_runtime",
+                ylabel="Kernel Runtime (ms)",
+                yscale="log",
+
+                figsize=(6,4),
+
+                title="",
+                output="NaN",
+
+                series_by=["Algorithm", "variant", "frequency_component"],
+                    
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_right",
+                legend_fontsize=8,
+                legend_style="values",
+            )),
+            (agg.loc[agg["Algorithm"].eq("SPMV")].copy(), PlotSpec(
+                kind="scatter",
+                x="run_power_w",
+                xlabel="Average Power (W)",
+                y="energy_j",
+                yscale="log",
+                ylabel="Kernel Energy Consumption (J)",
+
+                figsize=(6,4),
+
+                title="",
+                output="NaN",
+
+                series_by=["Algorithm", "variant", "frequency_component"],
+                
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_right",
+                legend_fontsize=8,
+                legend_style="values",
+            )),
         ],
-        title="Kernel Runtime and Kernel Runtime Energy vs Average Power Consumption by Algorithm and Variant",
         output="graphs/HPEC/runtime_energy_by_power.png",
-        figsize=(10, 4),
+        figsize=(9, 10),
+        sharex=False,
         sharey=False,
-        legend="right",
-        legend_ncol=4,  
-        dpi=400
+        legend="none",
+#        legend_label_style="values",
+        ncols=2,
+        legend_ncol=1,
+        dpi=400,
+
+        column_gap = 0.06,
+
+        column_xlabels = [
+            "Average Power (W)",
+            "Average Power (W)",
+        ],
+        column_xlabel_fontsize=16,
+
+        column_ylabels = [
+            "Kernel Runtime (ms)",
+            "Kernel Energy Consumption (J)",
+        ],
+        column_ylabel_fontsize=16,
+
+        column_ylabel_pad=0.065,
+        column_xlabel_pad=0.035,
+
     )
 
 
@@ -531,9 +913,7 @@ def main() -> None:
         },
 
         figsize=(12, 5),
-
-        title="Kernel Energy Consumption by Algorithm and Variant",
-        title_fontsize=22,
+        
         output="graphs/HPEC/energy_by_algorithm_variant.png",
 
         hue_by="Algorithm",
@@ -670,7 +1050,209 @@ def main() -> None:
         sharey=False,
         legend="right",
         legend_ncol=4,  
-        dpi=400
+        ncols=2,
+        dpi=400,
+
+        legend_style="values",
+
+    )
+
+    plotter.plot_panels(
+        [
+            (dev_data["CPU"].loc[dev_data["CPU"]["variant"].eq("Serial")].copy(), PlotSpec(
+                kind="line",
+                x="operating_frequency_mhz",
+                xlabel="CPU Frequency (MHz)",
+                y="run_power_w",
+                ylabel=None,
+
+                figsize=(5,4),
+
+                title="Serial\N{RIGHTWARDS ARROW}CPU",
+                title_fontsize=14,
+                output="graphs/HPEC/openmp_power_by_cpu_freq.png",
+
+                series_by=["Algorithm", "variant"],
+
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_left",
+                legend_style="values",
+                legend_fontsize=8,
+            )),
+            (dev_data["CPU"].loc[dev_data["CPU"]["variant"].eq("OpenMP")].copy(), PlotSpec(
+                kind="line",
+                x="operating_frequency_mhz",
+                xlabel="CPU Frequency (MHz)",
+                y="run_power_w",
+                ylabel=None,
+
+                figsize=(5,4),
+
+                title="OpenMP\N{RIGHTWARDS ARROW}CPU",
+                title_fontsize=14,
+                output="graphs/HPEC/openmp_power_by_cpu_freq.png",
+
+                series_by=["Algorithm", "variant"],
+
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_left",
+                legend_style="values",
+                legend_fontsize=8,
+            )),
+            (dev_data["CPU"].loc[dev_data["CPU"]["variant"].eq("PoCL")].copy(), PlotSpec(
+                kind="line",
+                x="operating_frequency_mhz",
+                xlabel="CPU Frequency (MHz)",
+                y="run_power_w",
+                ylabel=None,
+
+                figsize=(5,4),
+
+                title="PoCL\N{RIGHTWARDS ARROW}CPU",
+                title_fontsize=14,
+                output="graphs/HPEC/openmp_power_by_cpu_freq.png",
+
+                series_by=["Algorithm", "variant"],
+
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_left",
+                legend_style="values",
+                legend_fontsize=8,
+            )),
+            (dev_data["GPU"], PlotSpec(
+                kind="line",
+                x="operating_frequency_mhz",
+                xlabel="GPU Frequency (MHz)",
+                y="run_power_w",
+                ylabel=None,
+
+                figsize=(5,4),
+
+                title="clvk\N{RIGHTWARDS ARROW}GPU",
+                title_fontsize=14,
+                output="graphs/HPEC/opencl_power_by_gpu_freq.png",
+
+                series_by=["Algorithm", "variant"],
+
+                hue_by="Algorithm",
+                shade_by="variant",
+                marker_by="variant",
+
+                base_colors={
+                    "BFS":    "#4c78a8",
+                    "FFT":    "#54a24b",
+                    "KMeans": "#9c6ade",
+                    "SRAD":   "#7f7f7f",
+                    "SPMV": "#eb7323", 
+                },
+
+                shade_values={
+                    "clvk": -0.40,
+                    "PoCL": -0.15,
+                    "OpenMP": 0.10,
+                    "Serial": 0.35,
+                },
+
+                marker_values={
+                    "Serial": "s",
+                    "OpenMP": "^",
+                    "PoCL": "D",
+                    "clvk": "o"
+                },
+
+                legend="top_left",
+                legend_style="values",
+                legend_fontsize=8,
+            )),
+        ],
+        output="graphs/HPEC/power_by_frequency_cpu_gpu2.png",
+        figsize=(8, 6),
+        sharey=False,
+        legend="none",
+        legend_ncol=4,  
+        ncols=2,
+        dpi=400,
+
+        legend_style="values",
+
+        shared_ylabel="Average Power (W)",
+        shared_ylabel_fontsize=14,
+
     )
 
 

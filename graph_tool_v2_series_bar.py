@@ -252,10 +252,10 @@ class PlotSpec:
     bar_show_subgroup_labels: bool = True
 
     xscale: str = "linear"
-    xlabel: Optional[str] = None
+    xlabel: Optional[str] = ""
     xlabel_fontsize: int = 12
     yscale: str = "linear"
-    ylabel: Optional[str] = None
+    ylabel: Optional[str] = ""
     ylabel_fontsize: int = 12
 
     xlim: tuple[int, int] = None
@@ -631,13 +631,28 @@ class Plotter:
 
     def _finish(self, fig, ax, spec: PlotSpec) -> None:
         self._apply_legend(fig, ax, spec)
+        if (spec.xlabel is None):
+            xlabel = None
+        elif len(xlabel) == 0:
+            xlabel = self.label_for(spec.x)
+        else:
+            xlabel = spec.xlabel
+
+        if (spec.ylabel is None):
+            ylabel = None
+        elif len(ylabel) == 0:
+            ylabel = self.label_for(spec.x)
+        else:
+            xlabel = spec.xlabel
         if spec.kind != "bar":
-            ax.set_xlabel(spec.xlabel or self.label_for(spec.x), fontsize=spec.xlabel_fontsize)
+            if (xlabel):
+                ax.set_xlabel(xlabel, fontsize=spec.xlabel_fontsize)
             if (spec.xlim is not None):
                 ax.set_xlim(spec.xlim)
             ax.set_xscale(spec.xscale)
-            
-        ax.set_ylabel(spec.ylabel or self.label_for(spec.y), fontsize=spec.ylabel_fontsize)
+        
+        if (ylabel):
+            ax.set_ylabel(ylabel, fontsize=spec.ylabel_fontsize)
         ax.set_yscale(spec.yscale)
         if (spec.ylim is not None):
             ax.set_ylim(spec.ylim)
