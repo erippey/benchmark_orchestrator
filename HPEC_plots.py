@@ -914,6 +914,7 @@ def main() -> None:
 
         figsize=(12, 5),
         
+        title="",
         output="graphs/HPEC/energy_by_algorithm_variant.png",
 
         hue_by="Algorithm",
@@ -1047,7 +1048,7 @@ def main() -> None:
         ],
         output="graphs/HPEC/power_by_frequency_cpu_gpu.png",
         figsize=(10, 4),
-        sharey=False,
+        sharey=True,
         legend="right",
         legend_ncol=4,  
         ncols=2,
@@ -1242,7 +1243,7 @@ def main() -> None:
         ],
         output="graphs/HPEC/power_by_frequency_cpu_gpu2.png",
         figsize=(8, 6),
-        sharey=False,
+        sharey=True,
         legend="none",
         legend_ncol=4,  
         ncols=2,
