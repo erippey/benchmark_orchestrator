@@ -156,7 +156,7 @@ DERIVED = [
         higher_is_better=False,
     ),
     Metric("algorithm_family", "Algorithm", "", algorithm_family),
-    Metric("dev_backend", "Device + Backend", "", device_backend),
+    Metric("dev_backend", "Variant", "", device_backend),
     Metric("operation_count", "Operation Count", "ops", operation_count),
     Metric(
         "flops",
@@ -182,8 +182,24 @@ DERIVED = [
 ]
 
 
-def main() -> None:
-    csv_path = Path("./aggregated_csv/aggregated_results.csv")
+def smw_plot(bank_count: int = 0) -> None:
+    requested_bank_count = bank_count != 0
+    bank_count = bank_count or 16
+
+    def out_file(name: str) -> Path:
+        path = out_dir / name
+        if requested_bank_count:
+            return path.with_stem(f"{path.stem}_{bank_count}")
+        return path
+
+    def plot_title(title: str) -> str:
+        if not requested_bank_count:
+            return title
+
+        bank_word = "bank" if bank_count == 1 else "banks"
+        return f"{title} - {bank_count} {bank_word}"
+
+    csv_path = Path("./aggregated_csv/streaming_conv_results.csv")
     out_dir = Path("graphs")
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -191,7 +207,8 @@ def main() -> None:
 
     # Use raw rows here. Once every bucket has enough repeats, you can replace
     # `data` with a trimmed version that drops fastest/slowest runs per bucket.
-    plot_data = data
+    plot_data = data.where(Banks=bank_count).where(Governor="performance")
+
 
     gpu = plot_data.subset(
         lambda df: (
@@ -208,21 +225,37 @@ def main() -> None:
         )
     )
 
+    rpi_gpu = gpu.where(Device="RaspberryPiComputeModule5")
+
+    all = data.aggregate(
+        ["Device", "algorithm_family", "dev_backend", "gpu_freq_mhz"],
+        ["mflops_per_w", "throughput", "run_power_w", "conv_avg_ms"],
+        aggregator="mean",
+        include_std=True,
+    )
+
     gpu_agg = gpu.aggregate(
         ["Device", "algorithm_family", "dev_backend", "gpu_freq_mhz"],
-        ["mflops_per_w", "throughput", "run_power_w"],
+        ["mflops_per_w", "throughput", "run_power_w", "conv_avg_ms"],
         aggregator="mean",
         include_std=True,
     )
     cpu_agg = cpu.aggregate(
         ["Device", "algorithm_family", "dev_backend", "cpu_freq_mhz"],
-        ["mflops_per_w", "throughput", "run_power_w"],
+        ["mflops_per_w", "throughput", "run_power_w", "conv_avg_ms"],
         aggregator="mean",
         include_std=True,
     )
 
-    gpu_agg.to_csv(out_dir / "gpu_freq_vs_mflops_per_w.csv", index=False)
-    cpu_agg.to_csv(out_dir / "cpu_freq_vs_mflops_per_w.csv", index=False)
+    rpi_gpu = rpi_gpu.aggregate(
+        ["Device", "algorithm_family", "dev_backend", "gpu_freq_mhz"],
+        ["mflops_per_w", "throughput", "run_power_w", "conv_avg_ms"],
+        aggregator="mean",
+        include_std=True,
+    )
+
+    gpu_agg.to_csv(out_file("gpu_freq_vs_mflops_per_w.csv"), index=False)
+    cpu_agg.to_csv(out_file("cpu_freq_vs_mflops_per_w.csv"), index=False)
 
     dimensions = {
         "gpu_freq_mhz": Dimension("gpu_freq_mhz", "GPU Frequency", "MHz"),
@@ -232,6 +265,55 @@ def main() -> None:
     }
     metrics = {m.name: m for m in DERIVED}
     plotter = Plotter(dimensions, metrics)
+
+
+    plotter.plot(
+        all,
+        PlotSpec(
+            kind="line",
+
+            x="gpu_freq_mhz",
+            xlabel_fontsize=14,
+            y="mflops_per_w",
+            ylabel_fontsize=14,
+            yerr="mflops_per_w_std",
+            series_by=["algorithm_family", "dev_backend"],
+
+            #ylim=(120, 1900),
+
+
+            hue_by="dev_backend",
+            shade_by="algorithm_family",
+            marker_by="algorithm_family",
+
+            base_colors={
+                "nano-cufft": "#54a24b",
+                "nano-clfft": "#7634ac",
+                "RPi-clfft": "#db1916",
+                "RPi-fftw": "#162adb",
+                "RaspberryPiComputeModule5": "#162adb",
+            },
+
+            shade_values={
+                "UPF-OS":-0.35,
+                "OLA": 0.35,
+            },
+
+
+            title=plot_title("GPU Frequency vs Convolution Efficiency"),
+            title_fontsize=10,
+            output=out_file("aggregate.png"),
+
+            legend="outside_right",
+
+
+            highlight_highest_by=["dev_backend", "algorithm_family"],
+            highlight_highest_label="Lowest Power",
+            highlight_linewidth=1.5,
+            highlight_size=95,
+            highlight_alpha=1,
+        ),
+    )
 
     plotter.plot(
         gpu_agg,
@@ -245,7 +327,7 @@ def main() -> None:
             yerr="mflops_per_w_std",
             series_by=["algorithm_family", "dev_backend"],
 
-            ylim=(120, 1900),
+            #ylim=(120, 1900),
 
 
             hue_by="dev_backend",
@@ -264,15 +346,252 @@ def main() -> None:
             },
 
 
-            title="GPU Frequency vs Convolution Efficiency",
-            title_fontsize=16,
-            output=str(out_dir / "gpu_freq_vs_mflops_per_w.png"),
+            title=plot_title("GPU Frequency vs Convolution Efficiency"),
+            title_fontsize=10,
+            output=out_file("gpu_freq_vs_mflops_per_w.png"),
 
             legend="none",
 
 
             highlight_highest_by=["dev_backend", "algorithm_family"],
             highlight_highest_label="circled: best point within each device/algorithm",
+            highlight_linewidth=1.5,
+            highlight_size=95,
+            highlight_alpha=1,
+        ),
+    )
+
+    plotter.plot(
+        gpu_agg,
+        PlotSpec(
+            kind="line",
+
+            x="gpu_freq_mhz",
+            xlabel_fontsize=14,
+            y="throughput",
+            ylabel="Samples/Second",
+            ylabel_fontsize=14,
+            yerr="throughput_std",
+            series_by=["algorithm_family", "dev_backend"],
+
+            #ylim=(120, 1900),
+
+
+            hue_by="dev_backend",
+            shade_by="algorithm_family",
+            marker_by="algorithm_family",
+
+            base_colors={
+                "nano-cufft": "#54a24b",
+                "nano-clfft": "#7634ac",
+                "RPi-clfft": "#db1916",
+            },
+
+            shade_values={
+                "UPF-OS":-0.35,
+                "OLA": 0.35,
+            },
+
+
+            title=plot_title("GPU Frequency vs Input Samples per Second Throughput"),
+            title_fontsize=10,
+            output=out_file("gpu_freq_vs_throughput.png"),
+
+            legend="none",
+
+
+            highlight_highest_by=["dev_backend", "algorithm_family"],
+            highlight_highest_label="circled: best point within each device/algorithm",
+            highlight_linewidth=1.5,
+            highlight_size=95,
+            highlight_alpha=1,
+        ),
+    )
+
+    plotter.plot(
+        gpu_agg,
+        PlotSpec(
+            kind="line",
+
+            x="gpu_freq_mhz",
+            xlabel_fontsize=12,
+            y="run_power_w",
+            ylabel="Average Power (W)",
+            ylabel_fontsize=12,
+            yerr="run_power_w_std",
+            series_by=["algorithm_family", "dev_backend"],
+            figsize=(5,3),
+
+            #ylim=(120, 1900),
+
+
+            hue_by="dev_backend",
+            shade_by="algorithm_family",
+            marker_by="algorithm_family",
+
+            base_colors={
+                "nano-cufft": "#54a24b",
+                "nano-clfft": "#7634ac",
+                "RPi-clfft": "#db1916",
+            },
+
+            shade_values={
+                "UPF-OS":-0.35,
+                "OLA": 0.35,
+            },
+
+
+            title=plot_title("GPU Frequency vs Average Power Draw"),
+            title_fontsize=10,
+            output=out_file("gpu_freq_vs_power.png"),
+
+            legend="none",
+
+
+            highlight_lowest_by=["dev_backend", "algorithm_family"],
+            highlight_lowest_label="circled: best point within each device/algorithm",
+            highlight_linewidth=1.5,
+            highlight_size=95,
+            highlight_alpha=1,
+        ),
+    )
+
+
+    plotter.plot(
+        rpi_gpu,
+        PlotSpec(
+            kind="line",
+
+            x="gpu_freq_mhz",
+            xlabel_fontsize=14,
+            y="mflops_per_w",
+            ylabel_fontsize=14,
+            yerr="mflops_per_w_std",
+            series_by=["algorithm_family", "dev_backend"],
+
+            #ylim=(120, 1900),
+
+
+            hue_by="dev_backend",
+            shade_by="algorithm_family",
+            marker_by="algorithm_family",
+
+            base_colors={
+                "nano-cufft": "#54a24b",
+                "nano-clfft": "#7634ac",
+                "RPi-clfft": "#db1916",
+            },
+
+            shade_values={
+                "UPF-OS":-0.35,
+                "OLA": 0.35,
+            },
+
+
+            title=plot_title("GPU Frequency vs Convolution Efficiency"),
+            title_fontsize=10,
+            output=out_file("gpu_freq_vs_mflops_per_w_pi_only.png"),
+
+            legend="none",
+
+
+            highlight_highest_by=["dev_backend", "algorithm_family"],
+            highlight_highest_label="circled: best point within each device/algorithm",
+            highlight_linewidth=1.5,
+            highlight_size=95,
+            highlight_alpha=1,
+        ),
+    )
+
+    plotter.plot(
+        rpi_gpu,
+        PlotSpec(
+            kind="line",
+
+            x="gpu_freq_mhz",
+            xlabel_fontsize=14,
+            y="throughput",
+            ylabel="Samples/Second",
+            ylabel_fontsize=14,
+            yerr="throughput_std",
+            series_by=["algorithm_family", "dev_backend"],
+
+            #ylim=(120, 1900),
+
+
+            hue_by="dev_backend",
+            shade_by="algorithm_family",
+            marker_by="algorithm_family",
+
+            base_colors={
+                "nano-cufft": "#54a24b",
+                "nano-clfft": "#7634ac",
+                "RPi-clfft": "#db1916",
+            },
+
+            shade_values={
+                "UPF-OS":-0.35,
+                "OLA": 0.35,
+            },
+
+
+            title=plot_title("GPU Frequency vs Input Samples per Second Throughput"),
+            title_fontsize=10,
+            output=out_file("gpu_freq_vs_throughput_pi_only.png"),
+
+            legend="none",
+
+
+            highlight_highest_by=["dev_backend", "algorithm_family"],
+            highlight_highest_label="circled: best point within each device/algorithm",
+            highlight_linewidth=1.5,
+            highlight_size=95,
+            highlight_alpha=1,
+        ),
+    )
+
+    plotter.plot(
+        rpi_gpu,
+        PlotSpec(
+            kind="line",
+
+            x="gpu_freq_mhz",
+            xlabel_fontsize=12,
+            y="run_power_w",
+            ylabel="Average Power (W)",
+            ylabel_fontsize=12,
+            yerr="run_power_w_std",
+            series_by=["algorithm_family", "dev_backend"],
+            figsize=(5,2),
+
+            #ylim=(120, 1900),
+
+
+            hue_by="dev_backend",
+            shade_by="algorithm_family",
+            marker_by="algorithm_family",
+
+            base_colors={
+                "nano-cufft": "#54a24b",
+                "nano-clfft": "#7634ac",
+                "RPi-clfft": "#db1916",
+            },
+
+            shade_values={
+                "UPF-OS":-0.35,
+                "OLA": 0.35,
+            },
+
+
+            title=plot_title("GPU Frequency vs Average Power Draw"),
+            title_fontsize=10,
+            output=out_file("gpu_freq_vs_power_pi_only.png"),
+
+            legend="none",
+
+
+            highlight_lowest_by=["dev_backend", "algorithm_family"],
+            highlight_lowest_label="circled: best point within each device/algorithm",
             highlight_linewidth=1.5,
             highlight_size=95,
             highlight_alpha=1,
@@ -292,7 +611,7 @@ def main() -> None:
             yerr="mflops_per_w_std",
             series_by=["Device", "algorithm_family"],
 
-            ylim=(75, 1500),
+            #ylim=(75, 1500),
 
 
             hue_by="Device",
@@ -310,9 +629,9 @@ def main() -> None:
             },
 
 
-            title="CPU Frequency vs Convolution Efficiency",
-            title_fontsize=16,
-            output=str(out_dir / "cpu_freq_vs_mflops_per_w.png"),
+            title=plot_title("CPU Frequency vs Convolution Efficiency"),
+            title_fontsize=10,
+            output=out_file("cpu_freq_vs_mflops_per_w.png"),
 
             legend="none",
 
@@ -325,10 +644,108 @@ def main() -> None:
         ),
     )
 
+    plotter.plot(
+        cpu_agg,
+        PlotSpec(
+            kind="line",
+
+
+            x="cpu_freq_mhz",
+            xlabel_fontsize=14,
+            y="throughput",
+            ylabel="Samples/Second",
+            ylabel_fontsize=14,
+            yerr="throughput_std",
+            series_by=["Device", "algorithm_family"],
+
+            #ylim=(75, 1500),
+
+
+            hue_by="Device",
+            marker_by="algorithm_family",
+            shade_by="algorithm_family",
+
+            base_colors={
+                "JetsonOrinNanoSuper": "#7634ac",
+                "RaspberryPiComputeModule5": "#162adb",
+            },
+
+            shade_values={
+                "UPF-OS":-0.35,
+                "OLA": 0.35,
+            },
+
+
+            title=plot_title("CPU Frequency vs Input Samples per Second Throughput"),
+            title_fontsize=10,
+            output=out_file("cpu_freq_vs_throughput.png"),
+
+            legend="none",
+
+
+            highlight_highest_by=["Device", "algorithm_family"],
+            highlight_highest_label="circled: best point within each device/algorithm",
+            highlight_linewidth=1.5,
+            highlight_size=95,
+            highlight_alpha=1,
+        ),
+    )
+
+    plotter.plot(
+        cpu_agg,
+        PlotSpec(
+            kind="line",
+
+
+            x="cpu_freq_mhz",
+            xlabel_fontsize=12,
+            y="run_power_w",
+            ylabel="Average Power (W)",
+            ylabel_fontsize=12,
+            yerr="run_power_w_std",
+            series_by=["Device", "algorithm_family"],
+            figsize=(5,2),
+
+            #ylim=(75, 1500),
+
+
+            hue_by="Device",
+            marker_by="algorithm_family",
+            shade_by="algorithm_family",
+
+            base_colors={
+                "JetsonOrinNanoSuper": "#7634ac",
+                "RaspberryPiComputeModule5": "#162adb",
+            },
+
+            shade_values={
+                "UPF-OS":-0.35,
+                "OLA": 0.35,
+            },
+
+
+            title=plot_title("CPU Frequency vs Average Power Draw"),
+            title_fontsize=10,
+            output=out_file("cpu_freq_vs_power.png"),
+
+            legend="none",
+
+
+            highlight_lowest_by=["Device", "algorithm_family"],
+            highlight_lowest_label="circled: best point within each device/algorithm",
+            highlight_linewidth=1.5,
+            highlight_size=95,
+            highlight_alpha=1,
+        ),
+    )
+
     print(out_dir)
     print(gpu_agg)
     print(cpu_agg)
 
+
+def main() -> None:
+    smw_plot(16)
 
 if __name__ == "__main__":
     main()
