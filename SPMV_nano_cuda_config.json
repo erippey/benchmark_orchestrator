@@ -1,0 +1,43 @@
+{
+  "host": {
+    "wattsup_com_port": "COM3",
+    "sample_interval_sec": 1.0,
+    "log_root": "C:/Users/erippey3/Documents/benchmark_orchestrator/bench_logs/edge-suite"
+  },
+  "dut": {
+    "hostname": "imd",
+    "username": "imd",
+    "backup_ip": "169.254.65.169",
+    "root_access": true,
+    "build_dir": "/home/imd/Documents/Personal-Rodinia/cuda/SPMV",
+    "config_txt": "/boot/firmware/config.txt",
+    "comm_file": "/tmp/ready"
+  },
+  "stability": {
+    "window_size": 25,
+    "required_consecutive_windows": 3,
+    "max_range_watts": 0.201,
+    "max_step_delta_watts": 0.101
+  },
+  "retry": {
+    "max_attempts": 8,
+    "cooldown_sec": 120,
+    "ssh_wait_timeout_sec": 300
+  },
+  "tests": [
+    {
+      "name": "SPMV-cuda-nano",
+      "executable": "nice -20 ./csr -v -i ../../data/SPMV/csrmatrix_R1_N65536_D5000_S05 -j 500",
+      "governor": "performance",
+      "fixed_config": {
+      },
+      "sweep": {
+        "var": "ID",
+        "values": [5, 6, 7, 8, 9, 10, 11]
+      },
+      "total_iterations": 6,
+      "tag_fields": ["ID"],
+      "max_runtime_sec": 600
+    }
+  ]
+}

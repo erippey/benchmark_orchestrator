@@ -22,6 +22,8 @@ from graph_tool_v2_panels import (
     add_relative_to_group_x
 )
 
+from bar_charts import plot_bar_charts
+from power_energy import plot_energy_by_power
 
 def normalize_frequency_mhz(values: pd.Series) -> pd.Series:
     """Normalize mixed MHz/kHz/Hz frequency columns into MHz.
@@ -68,7 +70,7 @@ def implementation_component(df: pd.DataFrame) -> pd.Series:
     )
     gpu_impl = (
         backend.str.contains("clfft|cufft|cuda|opencl|gpu|vulkan|clvk", regex=True, na=False)
-        | platform.str.contains("cuda|opencl|vulkan|clvk|gpu|clvk", regex=True, na=False)
+        | platform.str.contains("cuda|opencl|vulkan|clvk|gpu", regex=True, na=False)
     )
 
     # CPU wins ties so an FFTW row that happens to carry stale GPU metadata
@@ -80,27 +82,53 @@ def implementation_component(df: pd.DataFrame) -> pd.Series:
 
 def variant(df: pd.DataFrame) -> pd.Series:
     threads = df.get("Threads", pd.Series("", index=df.index)).fillna(0).astype(int)
-    backend = df.get("Backend", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
     platform = df.get("Platform", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
-    test_name = df.get("run_dir", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
+    device = df.get("Device", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
 
-    clvk_impl = (
-        test_name.str.contains("vulkan|clvk", regex=True, na=False)
-        | platform.str.contains("vulkan|clvk", regex=True, na=False)
+    clvk_opi =  (
+        platform.str.contains("clvk", regex=True, na=False)
+        & device.str.contains("orangepi5ultra", regex=True, na=False)
     )
 
-    nocl_impl = (
+    clvk_rpi = (
+        platform.str.contains("opencl|clvk", regex=True, na=False)
+        & device.str.contains("raspberrypicomputemodule5", regex=True, na=False)
+    )
+
+    clvk_nano = (
+        platform.str.contains("opencl|clvk", regex=True, na=False)
+        & device.str.contains("jetsonorinnanosuper", regex=True, na=False)
+    )
+
+    opencl_opi =  (
         platform.str.contains("opencl", regex=True, na=False)
+        & device.str.contains("orangepi5ultra", regex=True, na=False)
     )
 
-    pocl_impl = (
-        backend.str.contains("pocl", regex=True, na=False)
-        | platform.str.contains("pocl", regex=True, na=False)
+    pocl = (
+        platform.str.contains("pocl", regex=True, na=False)
+    )
+
+    cuda = (
+        platform.str.contains("cuda", regex=True, na=False)
+    )
+
+    serial = (
+        platform.str.contains("serial", regex=True, na=False)
+        | (platform.str.contains("serial" , regex=True, na=False) & threads > 1)
+    )
+
+    openmp = (
+        platform.str.contains("openmp", regex=True, na=False)
     )
 
 
     return pd.Series(
-        np.select([clvk_impl, nocl_impl, pocl_impl, threads > 1, threads == 1], ["clvk", "OpenCL", "PoCL", "OpenMP", "Serial"], default="unknown"),
+        np.select([clvk_opi, clvk_rpi, clvk_nano, opencl_opi, pocl, cuda, serial, openmp], 
+        ["clvk\N{RIGHTWARDS ARROW}OPI", "clvk\N{RIGHTWARDS ARROW}RPI", 
+         "clvk\N{RIGHTWARDS ARROW}ONS", "OpenCL\N{RIGHTWARDS ARROW}OPI", 
+         "PoCL\N{RIGHTWARDS ARROW}RPI", "CUDA\N{RIGHTWARDS ARROW}ONS", "Serial\N{RIGHTWARDS ARROW}RPI", 
+         "OpenMP\N{RIGHTWARDS ARROW}RPI"], default="unknown"),
         index=df.index,
     )
 
@@ -213,8 +241,8 @@ DERIVED = [
 
 
 def main() -> None:
-    csv_path = Path("./aggregated_csv/OPI_HPEC.csv")
-    out_dir = Path("graphs/HPEC/")
+    csv_path = Path("../aggregated_csv/thesis_results.csv")
+    out_dir = Path("graphs/thesis/")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     data = BenchmarkData.from_csv(csv_path).with_metrics(DERIVED)
@@ -229,7 +257,7 @@ def main() -> None:
 
     for device in ["GPU", "CPU"]:
         dev_data[device] = plot_data.where(frequency_component=device).aggregate(
-            ["frequency_component", "operating_frequency_mhz", "Algorithm", "test_name", "Threads", "variant"],
+            ["Device", "frequency_component", "operating_frequency_mhz", "Algorithm", "Threads", "variant", "test_name"],
             ["kernel_runtime", "roi_runtime", "run_power_w", "energy_j", "edp_j_s"],
             aggregator="mean",
             include_std=True,
@@ -238,7 +266,7 @@ def main() -> None:
         dev_data[device] = add_relative_to_group_x(
             dev_data[device],
             "kernel_runtime",
-            ["Algorithm"],
+            ["test_name"],
             "operating_frequency_mhz",
             "max",
             higher_is_better=False,
@@ -248,7 +276,7 @@ def main() -> None:
         dev_data[device] = add_relative_to_group_x(
             dev_data[device],
             "energy_j",
-            ["Algorithm"],
+            ["test_name"],
             "operating_frequency_mhz",
             "max",
             higher_is_better=True,
@@ -257,7 +285,7 @@ def main() -> None:
 
 
     agg = plot_data.aggregate(
-            ["frequency_component", "operating_frequency_mhz", "Algorithm", "test_name", "Threads", "variant"],
+            ["Device", "frequency_component", "operating_frequency_mhz", "Algorithm", "Threads", "variant"],
             ["kernel_runtime", "roi_runtime", "run_power_w", "energy_j", "edp_j_s"],
             aggregator="mean",
             include_std=True,
@@ -285,53 +313,7 @@ def main() -> None:
     metrics = {m.name: m for m in DERIVED}
     plotter = Plotter(dimensions, metrics)
 
-
-    plotter.plot(agg, PlotSpec(
-        kind="scatter",
-        x="run_power_w",
-        xlabel="Average Power (W)",
-        y="energy_j",
-        yscale="log",
-        ylabel="Kernel Energy Consumption (J)",
-
-        figsize=(6,4),
-
-        title="Kernel Energy Consumption vs Average Power Draw by Algorithm and Variant",
-        title_wrap=50,
-        output= out_dir / "energy_by_power.png",
-
-        series_by=["Algorithm", "variant"],
-        
-        hue_by="Algorithm",
-        shade_by="variant",
-        marker_by="variant",
-
-        base_colors={
-            "BFS":    "#4c78a8",
-            "FFT":    "#54a24b",
-            "KMeans": "#9c6ade",
-            "SRAD":   "#7f7f7f",
-            "SPMV": "#eb7323", 
-        },
-
-        shade_values={
-            "clvk": -0.40,
-            "PoCL": -0.15,
-            "OpenMP": 0.10,
-            "Serial": 0.35,
-        },
-
-        marker_values={
-            "Serial": "s",
-            "OpenMP": "^",
-            "PoCL": "D",
-            "clvk": "o"
-        },
-
-        legend="outside_right",
-        legend_fontsize=6,
-    ))
-
+    plot_energy_by_power(agg, plotter, out_dir)
 
 
     plotter.plot(agg, PlotSpec(
@@ -863,97 +845,7 @@ def main() -> None:
     )
 
 
-
-    bar_df = select_best_per_group(
-        agg,
-        group_by=["Algorithm", "variant"],
-        value_col="energy_j",
-        mode="min",
-    )
-
-    bar_df = bar_df.copy()
-    bar_df["impl_class"] = np.where(bar_df["variant"].eq("clvk"), "GPU", "CPU")
-
-    plotter.plot(bar_df, PlotSpec(
-        kind="bar",
-        x="variant",
-        xlabel=None,
-        y="energy_j",
-        ylabel="Kernel Energy Consumption (J)",
-        yscale="log",
-
-        bar_group_by="Algorithm",
-        bar_subgroup_by="impl_class",
-
-        bar_show_subgroup_labels=False,
-        bar_show_group_labels=True,
-
-        bar_group_gap=0.8,
-        bar_subgroup_gap=0.5,
-        bar_width=0.72,
-
-        bar_value_fontsize=12,
-        bar_subgroup_label_fontsize=10,
-
-        # You can probably reduce this now because one label row is gone.
-        bar_multilevel_bottom=0.30,
-
-        category_orders={
-            "Algorithm": ["BFS", "FFT", "KMeans", "SRAD", "SPMV"],
-            "impl_class": ["CPU", "GPU"],
-            "variant": ["Serial", "OpenMP", "PoCL", "clvk"],
-        },
-
-        value_aliases={
-            "variant": {
-                "clvk": "clvk",
-                "Serial": "Ser.",
-                "OpenMP": "OMP",
-                "PoCL": "PoCL",
-            },
-            "impl_class": {
-                "CPU": "CPU",
-                "GPU": "GPU",
-            },
-        },
-
-        figsize=(12, 5),
-        
-        title="",
-        output= out_dir / "energy_by_algorithm_variant.png",
-
-        hue_by="Algorithm",
-        shade_by="variant",
-        pattern_by="variant",
-
-        base_colors={
-            "BFS":    "#4c78a8",
-            "FFT":    "#54a24b",
-            "KMeans": "#9c6ade",
-            "SRAD":   "#7f7f7f",
-            "SPMV":   "#eb7323",
-        },
-
-        shade_values={
-            "clvk": -0.40,
-            "PoCL": -0.15,
-            "OpenMP": 0.10,
-            "Serial": 0.35,
-        },
-
-        pattern_values={
-            "Serial": "",
-            "OpenMP": "//",
-            "PoCL": "xx",
-            "clvk": r"\\",
-        },
-
-        bar_edgecolor="black",
-        bar_linewidth=0.4,
-
-        legend="none",
-        legend_fontsize=10,
-    ))
+    plot_bar_charts(agg, plotter, out_dir)
 
     plotter.plot_panels(
         [
@@ -1273,9 +1165,9 @@ def main() -> None:
         figsize=(8,4),
 
         title="Relative clvk Kernel Performance vs GPU Frequency",
-        output="graphs/HPEC/opencl_runtime_by_gpu_freq.png",
+        output= out_dir / "opencl_runtime_by_gpu_freq.png",
 
-        series_by=["Algorithm", "variant"],
+        series_by=["Algorithm", "variant", "Device"],
 
         highlight_highest_by=["Algorithm"],
         highlight_highest_label="Best Performance",
@@ -1310,7 +1202,112 @@ def main() -> None:
         legend_fontsize=8,
     ))
 
-    
+    plotter.plot(dev_data["GPU"], PlotSpec(
+        kind="line",
+        x="operating_frequency_mhz",
+        xlabel="GPU Frequency (MHz)",
+        y="kernel_runtime",
+        ylabel="Kernel-Region Runtime (ms)",
+        yscale="log",
+
+        figsize=(8,8),
+
+        title="Kernel-Region Runtime vs GPU Frequency for All GPU Tests",
+        output= out_dir / "all_gpu_freq_v_runtime.png",
+
+        series_by=["Algorithm", "variant"],
+
+        #highlight_highest_by=["Algorithm"],
+        #highlight_highest_label="Best Performance",
+
+        hue_by="Algorithm",
+        shade_by="variant",
+        marker_by="variant",
+
+        base_colors={
+            "BFS":    "#4c78a8",
+            "FFT":    "#54a24b",
+            "KMeans": "#9c6ade",
+            "SRAD":   "#7f7f7f",
+            "SPMV": "#eb7323", 
+        },
+
+        shade_values = {
+            "clvk\u2192OPI":      -0.45,  # dark
+            "OpenCL\u2192OPI":     0.20,  # light-ish, separated from clvk OPI
+
+            "clvk\u2192RPI":      -0.25,  # medium-dark
+            "PoCL\u2192RPI":       0.05,  # near neutral
+            "Serial\u2192RPI":     0.40,  # very light
+            "OpenMP\u2192RPI":    -0.55,  # very dark, far from PoCL
+
+            "clvk\u2192ONS":      0.30,  # light
+            "CUDA\u2192ONS":     -0.70,  # darkest, strongly separated
+        },
+
+        marker_values = {
+            "Serial\u2192RPI": "s",
+            "OpenMP\u2192RPI": "^",
+            "PoCL\u2192RPI": "D",
+
+            "clvk\u2192RPI": "o",
+            "clvk\u2192OPI": "P",
+            "clvk\u2192ONS": "X",
+
+            "OpenCL\u2192OPI": "v",
+            "CUDA\u2192ONS": "*",
+        },
+
+        legend="outside_right",
+        legend_fontsize=8,
+    ))
+
+    plotter.plot(dev_data["GPU"], PlotSpec(
+        kind="line",
+        x="operating_frequency_mhz",
+        xlabel="GPU Frequency (MHz)",
+        y="run_power_w",
+        ylabel="Average Power Draw (W)",
+
+        figsize=(5,4),
+
+        title="Average Power Consumtion vs GPU Frequency",
+        output= out_dir / "opencl_power_by_gpu_freq.png",
+
+        series_by=["Algorithm", "variant", "Device"],
+
+        highlight_lowest_by=["Algorithm"],
+        highlight_lowest_label="Lowest Power",
+
+        hue_by="Algorithm",
+        shade_by="variant",
+        marker_by="variant",
+
+        base_colors={
+            "BFS":    "#4c78a8",
+            "FFT":    "#54a24b",
+            "KMeans": "#9c6ade",
+            "SRAD":   "#7f7f7f",
+            "SPMV": "#eb7323", 
+        },
+
+        shade_values={
+            "clvk": -0.40,
+            "PoCL": -0.15,
+            "OpenMP": 0.10,
+            "Serial": 0.35,
+        },
+
+        marker_values={
+            "Serial": "s",
+            "OpenMP": "^",
+            "PoCL": "D",
+            "clvk": "o"
+        },
+
+        legend="none",
+        legend_fontsize=8,
+    ))
 
     plotter.plot(dev_data["GPU"], PlotSpec(
         kind="line",
@@ -1325,7 +1322,7 @@ def main() -> None:
         title="Relative clvk Energy-to-Solution vs GPU Frequency",
         output= out_dir / "opencl_energy_j_by_gpu_freq.png",
 
-        series_by=["Algorithm", "variant"],
+        series_by=["Algorithm", "variant", "Device"],
 
         highlight_lowest_by=["Algorithm"],
         highlight_lowest_label="Lowest Energy Consumption",
@@ -1373,7 +1370,7 @@ def main() -> None:
         title="Relative CPU Kernel Performance vs CPU Frequency",
         output= out_dir / "openmp_runtime_by_cpu_freq.png",
 
-        series_by=["Algorithm", "variant"],
+        series_by=["Algorithm", "variant", "Device"],
 
         highlight_highest_by=["Algorithm", "variant"],
         highlight_highest_label="Best Performance/Efficiency",
@@ -1419,9 +1416,9 @@ def main() -> None:
         figsize=(5,4),
 
         title="Average Power Consumtion vs CPU Frequency",
-        output="graphs/HPEC/openmp_power_by_cpu_freq.png",
+        output= out_dir / "openmp_power_by_cpu_freq.png",
 
-        series_by=["Algorithm", "variant"],
+        series_by=["Algorithm", "variant", "Device"],
 
         highlight_lowest_by=["Algorithm", "variant"],
         highlight_lowest_label="Lowest Power",
@@ -1467,9 +1464,9 @@ def main() -> None:
         figsize=(7,5),
         
         title="Relative CPU Energy-to-Solution vs CPU Frequency",
-        output="graphs/HPEC/openmp_energy_j_by_cpu_freq.png",
+        output= out_dir / "openmp_energy_j_by_cpu_freq.png",
 
-        series_by=["Algorithm", "variant"],
+        series_by=["Algorithm", "variant", "Device"],
 
         highlight_lowest_by=["Algorithm", "variant"],
         highlight_lowest_label="Lowest Energy Consumption",
@@ -1504,7 +1501,7 @@ def main() -> None:
         legend_fontsize=8,
     ))
 
-    agg.to_csv("graphs/HPEC/HPEC_cumulative.csv")
+    agg.to_csv(out_dir / "thesis_cumulative.csv")
 
 
 
