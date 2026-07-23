@@ -23,9 +23,9 @@ def main():
     try: 
         config = load_config(cf_file)
 
-        #manager = CM5DeviceManager(config)
+        manager = CM5DeviceManager(config)
         #manager = NanoDeviceManager(config)
-        manager = OPI5DeviceManager(config)
+        #manager = OPI5DeviceManager(config)
 
         runner = BenchmarkRunner(config, manager, one_off=one_off)
 

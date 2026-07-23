@@ -401,8 +401,12 @@ class BenchmarkAggregator:
 if __name__ == "__main__":
 
     ADDITIONAL_KEYS = [
-        "Kernel Runtime",
-        "Region of Interest"
+        "Invocations",
+        "Deadlines Missed",
+        "Missed periods",
+        "Average execution",
+        "Maximum execution",
+        "Maximum start lateness"
     ]
 
     input_dir = "bench_logs/upols_stream_tests"

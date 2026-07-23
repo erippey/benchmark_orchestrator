@@ -3,6 +3,7 @@ import threading
 from wattsup import *
 from logger import *
 from ssh_client import *
+from pi_device_manager import *
 
 max_runtime_sec = 6 # in seconds
 
@@ -19,6 +20,7 @@ client = DUTClient(
     key_filename="/home/erippey3-laptop/.ssh/id_rsa"
 )
 client.connect()
+
 
 # root directory for executable
 remote_bin_dir = "/home/dev/tmp"
