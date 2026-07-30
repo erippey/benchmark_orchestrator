@@ -1,0 +1,5 @@
+total 12
+drwxrwxr-x  2 dev dev 4096 Jul 17 22:45 .
+drwx------ 16 dev dev 4096 Jul 17 22:43 ..
+-rw-rw-r--  1 dev dev    4 Jul 17 22:45 run.pid
+-rw-rw-r--  1 dev dev    0 Jul 17 22:45 stdout.txt

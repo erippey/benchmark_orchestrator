@@ -1,0 +1,148 @@
+{
+  "host": {
+    "wattsup_com_port": "/dev/ttyUSB0",
+    "sample_interval_sec": 1.0,
+    "log_root": "/home/erippey3-laptop/Documents/benchmark_orchestrator/bench_logs"
+  },
+  "dut": {
+    "hostname": "100.65.92.213",
+    "username": "dev",
+    "root_access": true,
+    "build_dir": "/home/dev/ESPRIT/Cpp/build",
+    "config_txt": "/boot/firmware/config.txt",
+    "comm_file": "/tmp/ready"
+  },
+  "stability": {
+    "window_size": 20,
+    "required_consecutive_windows": 3,
+    "max_range_watts": 0.201,
+    "max_step_delta_watts": 0.101
+  },
+  "retry": {
+    "max_attempts": 8,
+    "cooldown_sec": 30,
+    "ssh_wait_timeout_sec": 30
+  },
+  "tests": [
+    {
+      "name": "ESPRIT1_60fps_RP5_CPU",
+      "executable": "nice -20 ./run1.sh",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT2_60fps_RP5_CPU",
+      "executable": "nice -20 ./run2.sh",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT3_60fps_RP5_CPU",
+      "executable": "nice -20 ./run3.sh",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT1_60fps_RP5_CPU_t4",
+      "executable": "nice -20 ./run4.sh",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT2_60fps_RP5_CPU_t4",
+      "executable": "nice -20 ./run5.sh",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT3_60fps_RP5_CPU_t4",
+      "executable": "nice -20 ./run6.sh",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    }
+  ]
+}

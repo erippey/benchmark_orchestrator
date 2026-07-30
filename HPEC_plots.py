@@ -82,10 +82,15 @@ def variant(df: pd.DataFrame) -> pd.Series:
     threads = df.get("Threads", pd.Series("", index=df.index)).fillna(0).astype(int)
     backend = df.get("Backend", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
     platform = df.get("Platform", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
+    test_name = df.get("run_dir", pd.Series("", index=df.index)).fillna("").astype(str).str.lower()
 
-    gpu_impl = (
-        backend.str.contains("clfft|cufft|cuda|opencl|gpu|vulkan|clvk", regex=True, na=False)
-        | platform.str.contains("cuda|opencl|vulkan|clvk|gpu|clvk", regex=True, na=False)
+    clvk_impl = (
+        test_name.str.contains("vulkan|clvk", regex=True, na=False)
+        | platform.str.contains("vulkan|clvk", regex=True, na=False)
+    )
+
+    nocl_impl = (
+        platform.str.contains("opencl", regex=True, na=False)
     )
 
     pocl_impl = (
@@ -95,7 +100,7 @@ def variant(df: pd.DataFrame) -> pd.Series:
 
 
     return pd.Series(
-        np.select([gpu_impl, pocl_impl, threads > 1, threads == 1], ["clvk", "PoCL", "OpenMP", "Serial"], default="unknown"),
+        np.select([clvk_impl, nocl_impl, pocl_impl, threads > 1, threads == 1], ["clvk", "OpenCL", "PoCL", "OpenMP", "Serial"], default="unknown"),
         index=df.index,
     )
 
@@ -208,7 +213,7 @@ DERIVED = [
 
 
 def main() -> None:
-    csv_path = Path("./aggregated_csv/HPEC_results.csv")
+    csv_path = Path("./aggregated_csv/OPI_HPEC.csv")
     out_dir = Path("graphs/HPEC/")
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -233,7 +238,7 @@ def main() -> None:
         dev_data[device] = add_relative_to_group_x(
             dev_data[device],
             "kernel_runtime",
-            ["test_name"],
+            ["Algorithm"],
             "operating_frequency_mhz",
             "max",
             higher_is_better=False,
@@ -243,7 +248,7 @@ def main() -> None:
         dev_data[device] = add_relative_to_group_x(
             dev_data[device],
             "energy_j",
-            ["test_name"],
+            ["Algorithm"],
             "operating_frequency_mhz",
             "max",
             higher_is_better=True,

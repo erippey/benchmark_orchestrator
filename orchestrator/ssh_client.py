@@ -100,20 +100,32 @@ class DUTClient:
         last_exc = None
 
         for target in targets:
-            try:
-                user_client = self._connect_single(
-                    hostname=target,
-                    username=self.username,
-                    timeout=timeout,
-                )
+            user_client = None
+            root_client = None
 
-                root_client = None
-                if self.root_access:
-                    root_client = self._connect_single(
+            try:
+                try:
+                    user_client = self._connect_single(
                         hostname=target,
-                        username="root",
+                        username=self.username,
                         timeout=timeout,
                     )
+                except Exception as e:
+                    raise ConnectionError(
+                        f"Failed to connect as {self.username}@{target}"
+                    ) from e
+
+                if self.root_access:
+                    try:
+                        root_client = self._connect_single(
+                            hostname=target,
+                            username="root",
+                            timeout=timeout,
+                        )
+                    except Exception as e:
+                        raise ConnectionError(
+                            f"Failed to connect as root@{target}"
+                        ) from e
 
                 self.user = user_client
                 self.root = root_client
@@ -123,8 +135,8 @@ class DUTClient:
             except Exception as e:
                 last_exc = e
 
-                self._close_client(self.user)
-                self._close_client(self.root)
+                self._close_client(user_client)
+                self._close_client(root_client)
 
                 self.user = None
                 self.root = None

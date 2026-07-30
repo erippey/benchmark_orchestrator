@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+
+=======
 Algorithm,device,cpu_frequency_mhz,serial_kernel_runtime_ms,serial_run_power_w,openmp_kernel_runtime_ms,openmp_run_power_w,pocl_kernel_runtime_ms,pocl_run_power_w
 BFS,CPU,1500.0,7271.672,3.611,2217.941,5.849,1727.342,5.187
 BFS,CPU,1600.0,7052.585,4.043,2179.311,6.121,1724.084,5.569
@@ -49,3 +52,4 @@ SRAD,CPU,2100.0,48.471,5.034,43.932,7.19,66.732,7.26
 SRAD,CPU,2200.0,47.459,5.078,44.016,7.297,66.533,7.379
 SRAD,CPU,2300.0,46.555,5.072,43.834,7.376,64.28,7.743
 SRAD,CPU,2400.0,46.142,5.146,43.854,7.507,64.537,7.652
+>>>>>>> bb23ce81bca945428537120b7a877ed00211c03b
