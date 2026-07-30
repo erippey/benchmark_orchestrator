@@ -265,7 +265,7 @@ class PlotSpec:
     dpi: int = 400
 
     legend: str = "outside_right"
-    legend_ncol: Optional[int] = None
+    legend_ncol: Optional[int] = 1
     legend_fontsize: int = 8
     legend_style: Optional[Literal["full", "values"]] = "full"
     legend_separator: Optional[str] = "-"
@@ -542,6 +542,7 @@ class Plotter:
                 formatted_labels,
                 loc="center left",
                 bbox_to_anchor=(1.02, 0.5),
+                ncols=spec.legend_ncol,
                 **legend_kwargs,
             )
             return
@@ -552,6 +553,7 @@ class Plotter:
                 formatted_labels,
                 loc="center right",
                 bbox_to_anchor=(-0.02, 0.5),
+                ncols=spec.legend_ncol,
                 **legend_kwargs,
             )
             return
@@ -566,7 +568,7 @@ class Plotter:
                 formatted_labels,
                 loc="upper center",
                 bbox_to_anchor=(0.5, -0.18),
-                ncol=ncol,
+                ncols=spec.legend_ncol,
                 **legend_kwargs,
             )
             return
@@ -581,7 +583,7 @@ class Plotter:
                 formatted_labels,
                 loc="lower center",
                 bbox_to_anchor=(0.5, 1.02),
-                ncol=ncol,
+                ncols=spec.legend_ncol,
                 **legend_kwargs,
             )
             return

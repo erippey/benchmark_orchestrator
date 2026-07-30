@@ -880,7 +880,7 @@ def main() -> None:
         bar_group_by="Algorithm",
         bar_subgroup_by="impl_class",
 
-        bar_show_subgroup_labels=False,
+        bar_show_subgroup_labels=True,
         bar_show_group_labels=True,
 
         bar_group_gap=0.8,
@@ -1103,7 +1103,8 @@ def main() -> None:
 
                 legend="top_left",
                 legend_style="values",
-                legend_fontsize=8,
+                legend_fontsize=10,
+                legend_ncol=2,
             )),
             (dev_data["CPU"].loc[dev_data["CPU"]["variant"].eq("OpenMP")].copy(), PlotSpec(
                 kind="line",
@@ -1146,9 +1147,10 @@ def main() -> None:
                     "clvk": "o"
                 },
 
-                legend="top_left",
+                legend="bottom_right",
                 legend_style="values",
-                legend_fontsize=8,
+                legend_fontsize=10,
+                legend_ncol=2,
             )),
             (dev_data["CPU"].loc[dev_data["CPU"]["variant"].eq("PoCL")].copy(), PlotSpec(
                 kind="line",
@@ -1193,7 +1195,8 @@ def main() -> None:
 
                 legend="top_left",
                 legend_style="values",
-                legend_fontsize=8,
+                legend_fontsize=10,
+                legend_ncol=2,
             )),
             (dev_data["GPU"], PlotSpec(
                 kind="line",
@@ -1238,7 +1241,8 @@ def main() -> None:
 
                 legend="top_left",
                 legend_style="values",
-                legend_fontsize=8,
+                legend_fontsize=10,
+                legend_ncol=2,
             )),
         ],
         output= out_dir / "power_by_frequency_cpu_gpu2.png",
