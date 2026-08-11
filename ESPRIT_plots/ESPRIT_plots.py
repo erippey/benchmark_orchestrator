@@ -172,15 +172,23 @@ def main() -> None:
         output= out_dir / "power_by_cpu_freq.png",
 
         series_by=["Algorithm", "Threads"],
+
+        value_aliases={
+            "Algorithm": {
+                "ESPRIT 1": "ESPRIT SVD",
+                "ESPRIT 2": "ESPRIT Auto",
+                "ESPRIT 3": "ESPRIT Symmetric",
+            },
+        },
         
         hue_by="Algorithm",
         shade_by="Threads",
         marker_by="Threads",
 
         base_colors={
-            "ESPRIT 1":    "#4c78a8",
-            "ESPRIT 2":    "#54a24b",
-            "ESPRIT 3": "#9c6ade", 
+            "ESPRIT SVD":    "#4c78a8",
+            "ESPRIT Auto":    "#54a24b",
+            "ESPRIT Symmetric": "#9c6ade", 
         },
 
         shade_values={
@@ -212,6 +220,12 @@ def main() -> None:
         output= out_dir / "deadlines_missed_by_cpu_freq.png",
 
         series_by=["Algorithm", "Threads"],
+
+        value_aliases={
+            "ESPRIT 1": "ESPRIT SVD",
+            "ESPRIT 2": "ESPRIT Auto",
+            "ESPRIT 3": "ESPRIT Symmetric",
+        },
         
         hue_by="Algorithm",
         shade_by="Threads",

@@ -25,8 +25,8 @@
   },
   "tests": [
     {
-      "name": "ESPRIT1_60fps_RP5_CPU",
-      "executable": "nice -20 ./run1.sh",
+      "name": "ESPRIT_SVD_RP5_W192_S512",
+      "executable": "./run1.sh -s signal5.bin -W 192",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
@@ -45,8 +45,8 @@
       "max_runtime_sec": 600
     },
     {
-      "name": "ESPRIT2_60fps_RP5_CPU",
-      "executable": "nice -20 ./run2.sh",
+      "name": "ESPRIT_auto_RP5_W288_S768",
+      "executable": "./run2.sh -s signal9.bin -W 288",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
@@ -65,8 +65,8 @@
       "max_runtime_sec": 600
     },
     {
-      "name": "ESPRIT3_60fps_RP5_CPU",
-      "executable": "nice -20 ./run3.sh",
+      "name": "ESPRIT_symmetric_RP5_W640",
+      "executable": "./run3.sh -s signal7.bin",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
@@ -85,8 +85,8 @@
       "max_runtime_sec": 600
     },
     {
-      "name": "ESPRIT1_60fps_RP5_CPU_t4",
-      "executable": "nice -20 ./run4.sh",
+      "name": "ESPRIT_SVD_RP5_W192_S512_t4",
+      "executable": "./run4.sh -s signal5.bin -W 192",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
@@ -105,8 +105,8 @@
       "max_runtime_sec": 600
     },
     {
-      "name": "ESPRIT2_60fps_RP5_CPU_t4",
-      "executable": "nice -20 ./run5.sh",
+      "name": "ESPRIT_auto_RP5_W288_S768_t4",
+      "executable": "./run5.sh -s signal9.bin -W 288",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
@@ -125,8 +125,128 @@
       "max_runtime_sec": 600
     },
     {
-      "name": "ESPRIT3_60fps_RP5_CPU_t4",
-      "executable": "nice -20 ./run6.sh",
+      "name": "ESPRIT_symmetric_RP5_W640_t4",
+      "executable": "./run6.sh -s signal7.bin",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT_SVD_RP5_W288_S512",
+      "executable": "./run1.sh -s signal5.bin -W 288",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT_auto_RP5_W320_S896",
+      "executable": "./run2.sh -s signal11.bin -W 320",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT_symmetric_RP5_W512",
+      "executable": "./run3.sh -s signal5.bin",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT_SVD_RP5_W288_S512_t4",
+      "executable": "./run4.sh -s signal5.bin -W 288",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT_auto_RP5_W320_S896_t4",
+      "executable": "./run5.sh -s signal11.bin -W 320",
+      "governor": "performance",
+      "fixed_config": {
+        "v3d_freq": 500,
+        "v3d_freq_min": 500,
+        "core_freq": 910,
+        "core_freq_min": 910,
+        "sdram_freq": 4267,
+        "sdram_freq_min": 4267
+      },
+      "sweep": {
+        "var": "arm_freq",
+        "values": [2400, 2300, 2200, 2100, 2000, 1900, 1800, 1700, 1600, 1500]
+      },
+      "total_iterations": 3,
+      "tag_fields": ["arm_freq"],
+      "max_runtime_sec": 600
+    },
+    {
+      "name": "ESPRIT_symmetric_RP5_W512_t4",
+      "executable": "./run6.sh -s signal5.bin",
       "governor": "performance",
       "fixed_config": {
         "v3d_freq": 500,
